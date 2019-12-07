@@ -4,11 +4,12 @@ Alex Harry
 John Lambrecht
 Andrew Smith
 
-Instituiton: Montana State University
+Institution: Montana State University
 Course: CSCI-447 Machine Learning
 Instructor: John Shepherd
 
-File:
+File: Controls the flow of the code by calling functions and implementing objects in other files to create a stacked
+auto encoder.
 """
 
 

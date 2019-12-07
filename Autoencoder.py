@@ -4,7 +4,7 @@ Alex Harry
 John Lambrecht
 Andrew Smith
 
-Instituiton: Montana State University
+Institution: Montana State University
 Course: CSCI-447 Machine Learning
 Instructor: John Shepherd
 
@@ -87,18 +87,26 @@ class AutoEncoder:
         # TODO: not sure if needed for back prop... not mentioned in assignment
         pass
 
+# TODO: determine if class NetworkClient is needed... See program 4
+
 
 class Layer:
     """
     Creates the layers in the network of the encoder.
     """
+    def __init__(self, no_of_nodes):
+        self.no_of_nodes = no_of_nodes
+        self.nodes = []
 
-    def __init__(self, is_hidden, is_output, is_input, dimension, activation_function, weights):
-        self.is_hidden = is_hidden
-        self.is_output = is_output
-        self.is_input = is_input
-        self.dim = dimension
-        self.activation_funct = activation_function
+    def make_nodes(self):
+        for nodes in range(self.no_of_nodes):
+            self.nodes.append(Neuron(float(random.randint(-1, 1))/100))
+
+    def make_input_layer(self, inputs):
+        i = 0
+        for input in inputs:
+            self.nodes[i].value = input
+            i += 1
 
 
 class Neuron:
@@ -129,9 +137,6 @@ class Weight:
         self.prev_change = 0
         self.momentum_cof = .5
         self.eta = .1
-
-    def get_weight(self):
-        return self.weight
 
     def set_weight(self, weight):
         self.weight = weight

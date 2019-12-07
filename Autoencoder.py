@@ -42,7 +42,7 @@ class AutoEncoder:
 
     Specifics: uses back propagation to tune and train. Utilizes Feed forward.
 
-    This class contains functions to structure, fit, and  predict auto encoders
+    This class contains functions to structure, fit, and  predict auto encoders.
     """
 
     def __init__(self, data_instance, input_output_size, num_layers, is_stacked):
@@ -60,6 +60,12 @@ class AutoEncoder:
         self.is_stacked = is_stacked
 
     def make_layers(self):
+        pass
+
+    def vectorize(self):
+        pass
+
+    def networkize(self):
         pass
 
     def sigmoid_function(self):
@@ -83,6 +89,10 @@ class AutoEncoder:
 
 
 class Layer:
+    """
+    Creates the layers in the network of the encoder.
+    """
+
     def __init__(self, is_hidden, is_output, is_input, dimension, activation_function, weights):
         self.is_hidden = is_hidden
         self.is_output = is_output
@@ -92,6 +102,9 @@ class Layer:
 
 
 class Neuron:
+    """
+    creates the neurons within a layer.
+    """
     def __init__(self, bias, value=None):
         self.bias = bias
         self.prev_bias_change = 0
@@ -105,6 +118,9 @@ class Neuron:
 
 
 class Weight:
+    """
+    creates the weights associated to a neuron within a layer
+    """
     def __init__(self, L_neuron, R_neuron):
         self.L_neuron = L_neuron
         self.R_neuron = R_neuron

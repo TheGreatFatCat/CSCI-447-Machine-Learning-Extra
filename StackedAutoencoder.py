@@ -8,7 +8,7 @@ Instituiton: Montana State University
 Course: CSCI-447 Machine Learning
 Instructor: John Shepherd
 
-File:
+File: Contains the classes and function to create a stacked auto encoder. Structure associated to AutoEncoder.py
 """
 
 import random
@@ -21,8 +21,16 @@ class SAE:
     SAE: Stacked Auto Encoder
     A SAE is an auto encoders whose N hidden layers are also N auto encoders.
 
+    Three layers: Input, hidden, and output
+    Structure: Encoder and Decoder
+    Encoder: Compresses data. or maps input data into a hidden representation.
+    Decoder: Reconstructs the data back to the input.
 
+    Specifics: uses back propagation to tune and train. Utilizes Feed forward. Uses Neural Network to predict.
+
+    This class contains functions to structure, fit, and  predict auto encoders
     """
+
     def __init__(self, data_instance, input_output_size, num_layers):
 
         self.data_obj = data_instance

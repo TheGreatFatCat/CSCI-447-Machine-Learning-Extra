@@ -1,0 +1,15 @@
+High level:
+- Get autoencoder working first
+- Get stacked working next
+
+AutoEncoder:
+- tune and train by backprop
+- activation function sigmoidal
+- establish a network
+- establish weights
+- predict
+- fit
+
+Stacked Auto Encoder:
+- create a auto encoder as the hidden layer of another auto encoder
+

@@ -1,3 +1,15 @@
+"""
+Justin Keeling
+Alex Harry
+John Lambrecht
+Andrew Smith
+
+Instituiton: Montana State University
+Course: CSCI-447 Machine Learning
+Instructor: John Shepherd
+
+File:
+"""
 import pandas as pd
 import numpy as np
 

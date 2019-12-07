@@ -1,12 +1,9 @@
 import unittest
 
-from KMeans import Kmeans
-from PAM import PAM
 from Data import Data, DataConverter
 import pandas as pd
 import numpy as np
-from Cluster import KNN
-from Autoencoder import NeuralNetwork, NetworkClient
+
 import collections
 
 

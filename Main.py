@@ -1,3 +1,17 @@
+"""
+Justin Keeling
+Alex Harry
+John Lambrecht
+Andrew Smith
+
+Instituiton: Montana State University
+Course: CSCI-447 Machine Learning
+Instructor: John Shepherd
+
+File:
+"""
+
+
 from Data import Data
 import pandas as pd
 import csv

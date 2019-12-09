@@ -15,7 +15,7 @@ import random
 import math
 import numpy as np
 
-# TODO: Remove when read...
+# TODO: ALEX Remove when read...
 """ 
 ________________________________________________________________________________________________________________________
 READ THIS

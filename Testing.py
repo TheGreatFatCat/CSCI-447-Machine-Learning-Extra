@@ -12,6 +12,8 @@ class MyTestCase(unittest.TestCase):
     def test_auto_encoder_structure(self):
         """
         Test the layers in the auto encoder
+        Test format of structures by visual as well
+        Test traversing forwards and backwards. Visual check as well
         :return:
         """
         data = Data('abalone', pd.read_csv(r'data/abalone.data', header=None), 8, False)  # load data

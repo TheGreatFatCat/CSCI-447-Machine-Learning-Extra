@@ -114,13 +114,14 @@ class AutoEncoder:
     # def networkize(self):
     #     pass
 
-    @staticmethod
-    def sigmoid_activation_process(current_layer):
+
+    def sigmoid_activation_process(self, current):
         """
         Given the current layer (can be input), get the next layer. For each node in next layer, calculate the Wa+b
         :param current_layer:
         :return: None
         """
+        current_layer = current
         next_layer = current_layer.get_next_layer()  # next layer to calculate Z and sigmoid for.
         for target_node in next_layer.nodes:  # for each node in the next layer, calculate activation function
             sum_value = 0
@@ -130,6 +131,7 @@ class AutoEncoder:
             sum_value += target_node.bias  # add in bias last
             target_node.z_value = sum_value  # value to sigmoid
             target_node.sigmoid_function()  # creates the a range between [0, 1] from the value z.
+        current = current_layer
 
     def predict(self):
         # TODO: compare the output layer's values to the input layers (since actual is the input values).
@@ -162,6 +164,7 @@ class AutoEncoder:
         Goes through network nodes and finds the sigmoid value for each node.
         :return: None
         """
+        self.current_layer = self.input_layer
         while self.current_layer is not self.output_layer:  # once it is the output layer, no sigmoid value to compute
             self.sigmoid_activation_process(self.current_layer)  # performs sigmoid functions for layer
             self.current_layer = self.current_layer.get_next_layer()

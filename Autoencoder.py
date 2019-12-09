@@ -11,6 +11,7 @@ Instructor: John Shepherd
 File: contains classes and functions that are used primarily for the purpose of creating an AutoEncoder
 """
 # TODO: See TODO comments below to find out what you can do...
+# TODO: HAVE NOT DONE TESTING!!! Feel free to add testing
 import random
 import math
 import numpy as np
@@ -61,7 +62,6 @@ class AutoEncoder:
         self.hidden_node_sizes = num_hidden_layers
         self.is_stacked = is_stacked
 
-
         self.input_layer = None
         self.current_layer = None
         self.output_layer = None  # TODO: May not need
@@ -88,8 +88,8 @@ class AutoEncoder:
             """
             self.feed_forward_process()  # creates sigmoid values for every node
             self.predict()  # TODO: finish function
-            self.cost_process()
-            self.back_propagation_process()  # updates the weights, bias, and node values using gradient descent.
+            self.cost_process()  # TODO: finish function
+            self.back_propagation_process()  # updates the weights, bias, and node values using gradient descent. # TODO finish function
 
     def create_hidden_layer(self, num_layers, num_nodes):
         """
@@ -139,7 +139,7 @@ class AutoEncoder:
         Calculate the difference from the predicted - actual and use means squared.
         :return: None
         """
-        coefficient = 1/self.output_size
+        coefficient = 1 / self.output_size
         sum_value = 0
         for node in self.output_layer.nodes:
             pass

@@ -64,7 +64,7 @@ class AutoEncoder:
         self.current_layer = None
         self.output_layer = None  # TODO: May not need
 
-    def initialize_neural_net(self):  # TODO: switch "neural net" to "auto_encoder"
+    def initialize_auto_encoder(self):
         """
         Create the structure of the neural network
         :return: None
@@ -96,6 +96,7 @@ class AutoEncoder:
             temp = self.current_layer  # temp to make previous
             self.current_layer = temp.get_next_layer()  # update current
             self.current_layer.set_previous_layer(temp)  # set next layer's previous layer
+            self.current_layer = self.input_layer  # reset current to begin feed-forward
 
     def vectorize(self):
         pass
@@ -103,8 +104,24 @@ class AutoEncoder:
     def networkize(self):
         pass
 
-    def sigmoid_function(self):
-        pass
+
+    @staticmethod
+    def layer_activation_function(current_layer):
+        """
+        Given the current layer (can be input), get the next layer. For each node in next layer, calculate the Wa+b
+        :param current_layer:
+        :return: None
+        """
+        next_layer = current_layer.get_next_layer()  # next layer to calculate Z and sigmoid for.
+        for target_node in next_layer.nodes:  # for each node in the next layer, calculate activation function
+            sum_value = 0
+            for node, weight in zip(current_layer.nodes,
+                                    target_node.weight_vector):  # iterate through current layer nodes in parallel to the weights of the target node (target node has previous layer size weights).
+                sum_value += node.value * weight  # multiply weights and value
+            sum_value += target_node.bias  # add in bias last
+            target_node.z_value = sum_value  # value to sigmoid
+            target_node.sigmoid_function()  # creates the a range between [0, 1] from the value z.
+
 
     def predict(self):
         pass
@@ -129,6 +146,7 @@ class AutoEncoder:
 class Layer:
     """
     Creates the layers in the network of the encoder.
+    Structure as a linked list essentially.
     """
 
     def __init__(self, num_nodes, is_input_layer, is_output_layer, input):
@@ -193,8 +211,8 @@ class Layer:
             for i in input:
                 self.nodes.append(Neuron(i, None, None))
         else:  # initialize hidden_layer and output
-            weight_matrix, bias_vector = self.initialize_weights()
-            self.nodes = self._initialize_hidden_nodes(None, weight_matrix, bias_vector)
+            weight_matrix, bias_vector = self._initialize_weights()
+            self.nodes = self._initialize_hidden_nodes(weight_matrix, bias_vector)
 
     def get_next_layer(self):
         """
@@ -211,9 +229,19 @@ class Layer:
         return self._previous_layer
 
     def set_next_layer(self, next_layer):
+        """
+        Link to the next layer
+        :param next_layer:
+        :return: None
+        """
         self._next_layer = next_layer
 
     def set_previous_layer(self, prev_layer):
+        """
+        Link for to the previous layer
+        :param prev_layer:
+        :return: None
+        """
         self._previous_layer = prev_layer
 
 
@@ -233,6 +261,7 @@ class Neuron:
         self.bias = bias
         self.weight_vector = weight_vector
         self.delta = 0
+        self.z_value = 0
 
     def adjust_bias(self, amount):
         """
@@ -265,6 +294,13 @@ class Neuron:
         :return: value ; type float
         """
         return self._value
+
+    def sigmoid_function(self):
+        """
+        activation function for node
+        :return: None
+        """
+        self._value = 1 / (1 + np.exp(-self.z_value))
 
 # TODO: not being used, at least not yet... using vectors and matrices currently...
 # class Weight:

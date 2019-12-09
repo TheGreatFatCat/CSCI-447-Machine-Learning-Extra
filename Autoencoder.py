@@ -94,54 +94,151 @@ class Layer:
     """
     Creates the layers in the network of the encoder.
     """
-    def __init__(self, no_of_nodes):
-        self.no_of_nodes = no_of_nodes
-        self.nodes = []
+    def __init__(self, num_nodes, is_input_layer, is_output_layer, input):
+        """
+        Initialize a layer in the Neural Network.
+        :param num_nodes: the number of nodes in the network
+        :param is_input_layer: boolean var to specify if it is the input layer
+        :param is_output_layer: boolean var to specify if it is the output layer
+        """
+        self.is_input_layer = is_input_layer
+        self.is_output_layer = is_output_layer
 
-    def make_nodes(self):
-        for nodes in range(self.no_of_nodes):
-            self.nodes.append(Neuron(float(random.randint(-1, 1))/100))
+        self.no_of_nodes = num_nodes
 
-    def make_input_layer(self, inputs):
-        i = 0
-        for input in inputs:
-            self.nodes[i].value = input
-            i += 1
+        self.nodes = None
 
-    def next_layer(self):
-        pass
+        # TODO: determine if needed. Should consider iff we can do matrix multiplications...
+        # self.weight_matrix = None  # a row is all the nodes in previous layer connected to a node in this layer
+        # self.bias_vector = []  # contains the bias values with respect to the nodes
 
-    def 
+        self._previous_layer = None
+        self._next_layer = None
+
+        self._initialize_layer(input)  # creates the layer
+
+
+    @staticmethod
+    def _initialize_hidden_nodes(weight_matrix, bias_vector):
+        """
+        initializes nodes within the layer.
+        :param bias_vector: the bias for all the nodes in a list
+        :param weight_matrix: a matrix of weights associated to the previous layer
+        :return: nodes list of Neurons
+        """
+        input = [0]*len(bias_vector)  # input is 0 for non input layer nodes; sigmoid not calculated
+        nodes = []  # list to hold nodes
+        for i, b, w in zip(input, bias_vector, weight_matrix):
+            nodes.append(Neuron(i, b, w))  # create a Neuron and append it to list
+        return nodes
+
+    def _initialize_weights(self):
+        """
+        Randomly initialize weights and bias vector entries.
+        :return: weight matrix and vector
+        """
+        weight_matrix = []
+        size = self.get_previous_layer().no_of_nodes
+        for i in range(size):  # iterate through number of nodes in previous layer
+            weight_vector = []
+            for j in range(self.no_of_nodes):  # iterate through number of nodes in current layer
+                weight_vector.append(random.uniform(-1, 1))  # random value inserted into vector
+            weight_matrix.append(weight_vector)  # append the vector into the matrix
+            bias_vector.append(float(random.randint(-1, 1))/100)  # random initialized bias
+        return weight_matrix, bias_vector
+
+    def _initialize_layer(self, input):
+        """
+        initializes the layer using the other initializing functions.
+        :return: None
+        """
+        if self.is_input_layer:  # initialize input layer
+            for i in input:
+                self.nodes.append(Neuron(i, None, None))
+        else:  # initialize hidden_layer and output
+            weight_matrix, bias_vector = self.initialize_weights()
+            self.nodes = self._initialize_hidden_nodes(None, weight_matrix, bias_vector)
+
+
+    def get_next_layer(self):
+        """
+        Getter function for the previous layer
+        :return: next layer ; type Layer
+        """
+        return self._next_layer
+
+    def get_previous_layer(self):
+        """
+        Getter function for previous layer
+        :return: previous layer ; type Layer
+        """
+        return self._previous_layer
+
 
 
 class Neuron:
     """
     creates the neurons within a layer.
     """
-    def __init__(self, bias, value=None):
+    def __init__(self, value, bias, weight_vector):
+        """
+        Initialize a neuron in a layer
+        :param value: the value it currently contains
+        :param bias: the bias associated to the node
+        :param weight_vector: the weights associated to the node with respect to the previous layers nodes
+        """
+        self._value = value
         self.bias = bias
-        self.prev_bias_change = 0
-        self.bias_change = 0
-        self.is_sigmoidal = None
-        self.is_linear = None
-        self.incoming_weights = []
-        self.outgoing_weights = []
-        self.value = value
+        self.weight_vector = weight_vector
         self.delta = 0
 
+    def adjust_bias(self, amount):
+        """
+        PLAN to give the location of the weight to adjust and a positive or negative value to adjust by.
+        :param amount: amount to adjust by
+        :return: None
+        """
+        pass
 
-class Weight:
-    """
-    creates the weights associated to a neuron within a layer
-    """
-    def __init__(self, L_neuron, R_neuron):
-        self.L_neuron = L_neuron
-        self.R_neuron = R_neuron
-        self.weight = float(random.randint(-1, 1)) / 100
-        self.weight_change = 0
-        self.prev_change = 0
-        self.momentum_cof = .5
-        self.eta = .1
+    def adjust_weight(self, location, amount):
+        """
+        PLAN to give the location of the weight to adjust and a positive or negative value to adjust by.
+        :param location: location of the weight to change
+        :param amount: amount to adjust by
+        :return: None
+        """
+        pass
 
-    def set_weight(self, weight):
-        self.weight = weight
+
+    def change_value(self, new_val):
+        """
+        overwrite old value with new calculated value
+        :param new_val:
+        :return: None
+        """
+        self._value = new_val
+
+    def get_value(self):
+        """
+        getter function for value, either a sigmoidal value or a feature in the example
+        :return: value ; type float
+        """
+        return self._value
+
+
+# TODO: not being used, at least not yet... using vectors and matrices currently...
+# class Weight:
+#     """
+#     creates the weights associated to a neuron within a layer
+#     """
+#     def __init__(self, L_neuron, R_neuron):
+#         self.L_neuron = L_neuron
+#         self.R_neuron = R_neuron
+#         self.weight = float(random.randint(-1, 1)) / 100
+#         self.weight_change = 0
+#         self.prev_change = 0
+#         self.momentum_cof = .5
+#         self.eta = .1
+#
+#     def set_weight(self, weight):
+#         self.weight = weight

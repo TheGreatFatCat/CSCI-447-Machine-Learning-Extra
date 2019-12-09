@@ -10,7 +10,7 @@ Instructor: John Shepherd
 
 File: contains classes and functions that are used primarily for the purpose of creating an AutoEncoder
 """
-
+# TODO: See TODO comments below to find out what you can do...
 import random
 import math
 import numpy as np
@@ -55,10 +55,12 @@ class AutoEncoder:
         """
         self.data_obj = data_instance
         self.df = self.data_obj.df  # data frame of preprocessed data
-        self.io_size = self.df.shape[0]
+        self.input_size = self.df.shape[0]
+        self.output_size = None  # TODO: get number of classes/ bins there are...
         self.num_layers = num_layers
         self.hidden_node_sizes = num_hidden_layers
         self.is_stacked = is_stacked
+
 
         self.input_layer = None
         self.current_layer = None
@@ -70,18 +72,24 @@ class AutoEncoder:
         :return: None
         """
         first_iter = True  # create structure first iteration
-        batch_size = 10  # number of example per batch
+        batch_size = 10  # number of example per batch  # TODO: use stochastic gradient descent... idk where batch size matters.
         for row in self.df.iterrows():  # iterate through each example
             if first_iter:  # first iteration sets up structure
-                self.input_layer = Layer(self.io_size, True, False, row)  # create hidden layer
+                self.input_layer = Layer(self.input_size, True, False, row)  # create hidden layer
                 self.current_layer = self.input_layer
                 self.create_hidden_layer(self.num_layers, self.hidden_node_sizes)  # create layers in hidden layer
-                self.output_layer = Layer(self.io_size, False, True, None)
+                self.output_layer = Layer(self.output_size, False, True, None)
                 self.current_layer.set_next_layer(self.output_layer)  # connect last hidden to output
                 self.output_layer.set_previous_layer(self.current_layer)  # connect output to last hidden layer
                 first_iter = False  # does not let a new structure to overwrite existing
 
-            # TODO: call train, train should control/call feed forward, sigmoid, and back prop,
+            """
+            training_process: feed forward, cost_process, back propagation (includes updating by using gradient descent)
+            """
+            self.feed_forward_process()  # creates sigmoid values for every node
+            self.predict()  # TODO: finish function
+            self.cost_process()
+            self.back_propagation_process()  # updates the weights, bias, and node values using gradient descent.
 
     def create_hidden_layer(self, num_layers, num_nodes):
         """
@@ -104,9 +112,8 @@ class AutoEncoder:
     def networkize(self):
         pass
 
-
     @staticmethod
-    def layer_activation_function(current_layer):
+    def sigmoid_activation_process(current_layer):
         """
         Given the current layer (can be input), get the next layer. For each node in next layer, calculate the Wa+b
         :param current_layer:
@@ -122,22 +129,39 @@ class AutoEncoder:
             target_node.z_value = sum_value  # value to sigmoid
             target_node.sigmoid_function()  # creates the a range between [0, 1] from the value z.
 
-
     def predict(self):
+        # TODO: compare the output layer's values to the input layers (since actual is the input values).
+        # TODO: Traditional Neural net: actual values are all 0 but one is 1. Since we are trying to predict the input layer, we cannot do that.
         pass
 
-    def cost(self):
-        pass
+    def cost_process(self):
+        """
+        Calculate the difference from the predicted - actual and use means squared.
+        :return: None
+        """
+        coefficient = 1/self.output_size
+        sum_value = 0
+        for node in self.output_layer.nodes:
+            pass
 
     def set_output(self):
         pass
 
-    def back_propagation(self):
+    def back_propagation_process(self):
         pass
 
     def gradient_descent(self):
         # TODO: not sure if needed for back prop... not mentioned in assignment
         pass
+
+    def feed_forward_process(self):
+        """
+        Goes through network nodes and finds the sigmoid value for each node.
+        :return: None
+        """
+        while self.current_layer is not self.output_layer:  # once it is the output layer, no sigmoid value to compute
+            self.sigmoid_activation_process(self.current_layer)  # performs sigmoid functions for layer
+            self.current_layer = self.current_layer.get_next_layer()
 
 
 # TODO: determine if class NetworkClient is needed... See program 4

@@ -102,10 +102,8 @@ class AutoEncoder:
         :return: None
         """
         # TODO: number of nodes will decrease by 1 until size 1, then expand back out...
-        store = []
         for i in range(num_layers):  # create the user-defined number of layers
             new_layer = Layer(num_nodes[i], False, False, None, self.current_layer)
-            store.append(new_layer)
             self.current_layer.set_next_layer(new_layer)  # link from current to next layer
             temp = self.current_layer
             self.current_layer = temp.get_next_layer()
@@ -173,7 +171,7 @@ class AutoEncoder:
         while True:
             self.current_layer.print_layer_data()
             for node in self.current_layer.nodes:
-                # node.print_neuron_data()
+                node.print_neuron_data()
                 pass
             if self.current_layer is self.output_layer:
                 break
@@ -213,18 +211,20 @@ class Layer:
 
         self._initialize_layer(input)  # creates the layer
 
-    @staticmethod
-    def _initialize_hidden_nodes(weight_matrix, bias_vector):
+    def _initialize_hidden_nodes(self, weight_matrix, bias_vector):
         """
         initializes nodes within the layer.
         :param bias_vector: the bias for all the nodes in a list
         :param weight_matrix: a matrix of weights associated to the previous layer
         :return: nodes list of Neurons
         """
-        input = [0] * len(bias_vector)  # input is 0 for non input layer nodes; sigmoid not calculated
+        input = [0] * self.no_of_nodes  # input is 0 for non input layer nodes; sigmoid not calculated
         nodes = []  # list to hold nodes
-        for i, b, w in zip(input, bias_vector, weight_matrix):
-            nodes.append(Neuron(i, b, w))  # create a Neuron and append it to list
+        for neuron in range(self.no_of_nodes):
+            n = Neuron(input[neuron], bias_vector[neuron], [])
+            for w in weight_matrix:
+                n.weight_vector.append(w[neuron])
+            nodes.append(n)
         return nodes
 
     def _initialize_weights(self):
@@ -240,7 +240,8 @@ class Layer:
             for j in range(self.no_of_nodes):  # iterate through number of nodes in current layer
                 weight_vector.append(random.uniform(-1, 1))  # random value inserted into vector
             weight_matrix.append(weight_vector)  # append the vector into the matrix
-            bias_vector.append(float(random.randint(-1, 1)) / 100)  # random initialized bias
+        for i in range(self.no_of_nodes):
+            bias_vector.append(float(random.uniform(-1, 1)) / 100)  # random initialized bias
         return weight_matrix, bias_vector
 
     def _initialize_layer(self, input):
@@ -249,7 +250,7 @@ class Layer:
         :return: None
         """
         if self.is_input_layer:  # initialize input layer
-            for i in input:
+            for i in input[1]:
                 self.nodes.append(Neuron(i, None, None))
         else:  # initialize hidden_layer and output
             weight_matrix, bias_vector = self._initialize_weights()
@@ -288,18 +289,24 @@ class Layer:
     def print_layer_data(self):
         if self.is_input_layer:
             string = "_________________________________________________________________"
-            center = " " * int(len(string) / 2) + "Input Layer" + " " * int(len(string) / 2)
+            center = "Input Layer"
+            print(string)
             print(center)
+            print(string)
             print("Next Layer Nodes = %s" % self.get_next_layer().nodes)
         if self.is_output_layer:
             string = "_________________________________________________________________"
-            center = " " * int(len(string) / 2) + "Output Layer" + " " * int(len(string) / 2)
+            center = "Output Layer"
+            print(string)
             print(center)
+            print(string)
             print("Previous Layer Node= %s" % self.get_previous_layer().nodes)
         if self.is_output_layer == False and self.is_input_layer == False:
             string = "_________________________________________________________________"
-            center = " " * int(len(string) / 2) + "Hidden Layer" + " " * int(len(string) / 2)
+            center = "Hidden Layer"
+            print(string)
             print(center)
+            print(string)
             print("Next Layer Nodes = %s" % self.get_next_layer().nodes)
             if not self.get_previous_layer().is_input_layer:
                 print("Previous Layer Node= %s" % self.get_previous_layer().nodes)
@@ -371,7 +378,10 @@ class Neuron:
         print("\t----------Neuron------------")
         print("\t value = %s" % self.get_value())
         print("\t bias = %s" % self.bias)
-        print("\t weight_vector = %s" % self.weight_vector)
+        if self.weight_vector is not None:
+            print("\t weight_vector = ", list(self.weight_vector), "\n")
+        else:
+            print("\t weight_vector = ", None, "\n")
 
 # TODO: not being used, at least not yet... using vectors and matrices currently...
 # class Weight:

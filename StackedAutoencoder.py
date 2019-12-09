@@ -16,6 +16,8 @@ import math
 import numpy as np
 
 
+# TODO: arbitrary number of auto encoder layers (hidden layer); in our case, hidden layer is new auto encoder for stack,
+
 class SAE:
     """
     SAE: Stacked Auto Encoder

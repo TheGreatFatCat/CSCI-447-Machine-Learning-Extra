@@ -98,6 +98,8 @@ class AutoEncoder:
         :param num_nodes: list; number of nodes in hidden layer
         :return: None
         """
+        # TODO: number of nodes will decrease by 1 until size 1, then expand back out...
+
         for i in range(num_layers):  # create the user-defined number of layers
             self.current_layer.set_next_layer(
                 Layer(num_nodes[i], False, False, None))  # link from current to next layer
@@ -106,11 +108,11 @@ class AutoEncoder:
             self.current_layer.set_previous_layer(temp)  # set next layer's previous layer
             self.current_layer = self.input_layer  # reset current to begin feed-forward
 
-    def vectorize(self):
-        pass
-
-    def networkize(self):
-        pass
+    # def vectorize(self):
+    #     pass
+    #
+    # def networkize(self):
+    #     pass
 
     @staticmethod
     def sigmoid_activation_process(current_layer):
@@ -139,13 +141,14 @@ class AutoEncoder:
         Calculate the difference from the predicted - actual and use means squared.
         :return: None
         """
+        # TODO: goal; we want (predicted - actual)^2 = 0
         coefficient = 1 / self.output_size
         sum_value = 0
         for node in self.output_layer.nodes:
             pass
 
-    def set_output(self):
-        pass
+    # def set_output(self):
+    #     pass
 
     def back_propagation_process(self):
         pass

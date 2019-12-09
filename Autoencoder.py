@@ -108,6 +108,11 @@ class Layer:
             self.nodes[i].value = input
             i += 1
 
+    def next_layer(self):
+        pass
+
+    def 
+
 
 class Neuron:
     """

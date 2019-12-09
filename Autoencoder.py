@@ -64,7 +64,7 @@ class AutoEncoder:
         self.current_layer = None
         self.output_layer = None  # TODO: May not need
 
-    def initialize_neural_net(self):
+    def initialize_neural_net(self):  # TODO: switch "neural net" to "auto_encoder"
         """
         Create the structure of the neural network
         :return: None

@@ -21,6 +21,15 @@ class MyTestCase(unittest.TestCase):
         auto.print_layer_neuron_data()
         """Structure is good to go"""
 
+        current = auto.output_layer
+        while True:
+            print(current.no_of_nodes)
+            if current is auto.input_layer:
+                break
+            current = current.get_previous_layer()
+        """traversing is good; from printing above (forwards) and right above (backwards)"""
+
+
 
 if __name__ == '__main__':
     unittest.main()

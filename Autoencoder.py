@@ -45,22 +45,57 @@ class AutoEncoder:
     This class contains functions to structure, fit, and  predict auto encoders.
     """
 
-    def __init__(self, data_instance, input_output_size, num_layers, is_stacked):
+    def __init__(self, data_instance, num_layers, is_stacked, num_hidden_layers):
         """
         Initializes an AutoEncoder object.
         :param data_instance: the data object of the data to train and test upon
-        :param input_output_size: arbitrarily choose size of input
         :param num_layers: arbitrarily set the number of hidden layers
         :param is_stacked: boolean to determine if the encoder is should feeding another encoder
+        :param num_hidden_layers: list ; number of  hidden layer
         """
         self.data_obj = data_instance
         self.df = self.data_obj.df  # data frame of preprocessed data
-        self.io_size = input_output_size
+        self.io_size = self.df.shape[0]
         self.num_layers = num_layers
+        self.hidden_node_sizes = num_hidden_layers
         self.is_stacked = is_stacked
 
-    def make_layers(self):
-        pass
+        self.input_layer = None
+        self.current_layer = None
+        self.output_layer = None  # TODO: May not need
+
+    def initialize_neural_net(self):
+        """
+        Create the structure of the neural network
+        :return: None
+        """
+        first_iter = True  # create structure first iteration
+        batch_size = 10  # number of example per batch
+        for row in self.df.iterrows():  # iterate through each example
+            if first_iter:  # first iteration sets up structure
+                self.input_layer = Layer(self.io_size, True, False, row)  # create hidden layer
+                self.current_layer = self.input_layer
+                self.create_hidden_layer(self.num_layers, self.hidden_node_sizes)  # create layers in hidden layer
+                self.output_layer = Layer(self.io_size, False, True, None)
+                self.current_layer.set_next_layer(self.output_layer)  # connect last hidden to output
+                self.output_layer.set_previous_layer(self.current_layer)  # connect output to last hidden layer
+                first_iter = False  # does not let a new structure to overwrite existing
+
+            # TODO: call train, train should control/call feed forward, sigmoid, and back prop,
+
+    def create_hidden_layer(self, num_layers, num_nodes):
+        """
+        Create the hidden layer's layers
+        :param num_layers: number of hidden layers
+        :param num_nodes: list; number of nodes in hidden layer
+        :return: None
+        """
+        for i in range(num_layers):  # create the user-defined number of layers
+            self.current_layer.set_next_layer(
+                Layer(num_nodes[i], False, False, None))  # link from current to next layer
+            temp = self.current_layer  # temp to make previous
+            self.current_layer = temp.get_next_layer()  # update current
+            self.current_layer.set_previous_layer(temp)  # set next layer's previous layer
 
     def vectorize(self):
         pass
@@ -87,6 +122,7 @@ class AutoEncoder:
         # TODO: not sure if needed for back prop... not mentioned in assignment
         pass
 
+
 # TODO: determine if class NetworkClient is needed... See program 4
 
 
@@ -94,6 +130,7 @@ class Layer:
     """
     Creates the layers in the network of the encoder.
     """
+
     def __init__(self, num_nodes, is_input_layer, is_output_layer, input):
         """
         Initialize a layer in the Neural Network.
@@ -117,7 +154,6 @@ class Layer:
 
         self._initialize_layer(input)  # creates the layer
 
-
     @staticmethod
     def _initialize_hidden_nodes(weight_matrix, bias_vector):
         """
@@ -126,7 +162,7 @@ class Layer:
         :param weight_matrix: a matrix of weights associated to the previous layer
         :return: nodes list of Neurons
         """
-        input = [0]*len(bias_vector)  # input is 0 for non input layer nodes; sigmoid not calculated
+        input = [0] * len(bias_vector)  # input is 0 for non input layer nodes; sigmoid not calculated
         nodes = []  # list to hold nodes
         for i, b, w in zip(input, bias_vector, weight_matrix):
             nodes.append(Neuron(i, b, w))  # create a Neuron and append it to list
@@ -138,13 +174,14 @@ class Layer:
         :return: weight matrix and vector
         """
         weight_matrix = []
+        bias_vector = []
         size = self.get_previous_layer().no_of_nodes
         for i in range(size):  # iterate through number of nodes in previous layer
             weight_vector = []
             for j in range(self.no_of_nodes):  # iterate through number of nodes in current layer
                 weight_vector.append(random.uniform(-1, 1))  # random value inserted into vector
             weight_matrix.append(weight_vector)  # append the vector into the matrix
-            bias_vector.append(float(random.randint(-1, 1))/100)  # random initialized bias
+            bias_vector.append(float(random.randint(-1, 1)) / 100)  # random initialized bias
         return weight_matrix, bias_vector
 
     def _initialize_layer(self, input):
@@ -158,7 +195,6 @@ class Layer:
         else:  # initialize hidden_layer and output
             weight_matrix, bias_vector = self.initialize_weights()
             self.nodes = self._initialize_hidden_nodes(None, weight_matrix, bias_vector)
-
 
     def get_next_layer(self):
         """
@@ -174,12 +210,18 @@ class Layer:
         """
         return self._previous_layer
 
+    def set_next_layer(self, next_layer):
+        self._next_layer = next_layer
+
+    def set_previous_layer(self, prev_layer):
+        self._previous_layer = prev_layer
 
 
 class Neuron:
     """
     creates the neurons within a layer.
     """
+
     def __init__(self, value, bias, weight_vector):
         """
         Initialize a neuron in a layer
@@ -209,7 +251,6 @@ class Neuron:
         """
         pass
 
-
     def change_value(self, new_val):
         """
         overwrite old value with new calculated value
@@ -224,7 +265,6 @@ class Neuron:
         :return: value ; type float
         """
         return self._value
-
 
 # TODO: not being used, at least not yet... using vectors and matrices currently...
 # class Weight:

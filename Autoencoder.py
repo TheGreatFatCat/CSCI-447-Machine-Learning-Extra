@@ -56,8 +56,8 @@ class AutoEncoder:
         """
         self.data_obj = data_instance
         self.df = self.data_obj.df  # data frame of preprocessed data
-        self.input_size = self.df.shape[0]
-        self.output_size = None  # TODO: get number of classes/ bins there are...
+        self.input_size = self.df.shape[1]
+        self.output_size = self.input_size
         self.num_layers = num_layers
         self.hidden_node_sizes = num_hidden_layers
         self.is_stacked = is_stacked
@@ -65,6 +65,8 @@ class AutoEncoder:
         self.input_layer = None
         self.current_layer = None
         self.output_layer = None  # TODO: May not need
+
+        self.initialize_auto_encoder()
 
     def initialize_auto_encoder(self):
         """
@@ -75,21 +77,22 @@ class AutoEncoder:
         batch_size = 10  # number of example per batch  # TODO: use stochastic gradient descent... idk where batch size matters.
         for row in self.df.iterrows():  # iterate through each example
             if first_iter:  # first iteration sets up structure
-                self.input_layer = Layer(self.input_size, True, False, row)  # create hidden layer
+                self.input_layer = Layer(self.input_size, True, False, row, None)  # create hidden layer
                 self.current_layer = self.input_layer
                 self.create_hidden_layer(self.num_layers, self.hidden_node_sizes)  # create layers in hidden layer
-                self.output_layer = Layer(self.output_size, False, True, None)
+
+                self.output_layer = Layer(self.output_size, False, True, None, self.current_layer)
                 self.current_layer.set_next_layer(self.output_layer)  # connect last hidden to output
-                self.output_layer.set_previous_layer(self.current_layer)  # connect output to last hidden layer
+
                 first_iter = False  # does not let a new structure to overwrite existing
 
             """
             training_process: feed forward, cost_process, back propagation (includes updating by using gradient descent)
             """
             self.feed_forward_process()  # creates sigmoid values for every node
-            self.predict()  # TODO: finish function
-            self.cost_process()  # TODO: finish function
-            self.back_propagation_process()  # updates the weights, bias, and node values using gradient descent. # TODO finish function
+            # self.predict()  # TODO: finish function
+            # self.cost_process()  # TODO: finish function
+            # self.back_propagation_process()  # updates the weights, bias, and node values using gradient descent. # TODO finish function
 
     def create_hidden_layer(self, num_layers, num_nodes):
         """
@@ -99,14 +102,13 @@ class AutoEncoder:
         :return: None
         """
         # TODO: number of nodes will decrease by 1 until size 1, then expand back out...
-
+        store = []
         for i in range(num_layers):  # create the user-defined number of layers
-            self.current_layer.set_next_layer(
-                Layer(num_nodes[i], False, False, None))  # link from current to next layer
-            temp = self.current_layer  # temp to make previous
-            self.current_layer = temp.get_next_layer()  # update current
-            self.current_layer.set_previous_layer(temp)  # set next layer's previous layer
-            self.current_layer = self.input_layer  # reset current to begin feed-forward
+            new_layer = Layer(num_nodes[i], False, False, None, self.current_layer)
+            store.append(new_layer)
+            self.current_layer.set_next_layer(new_layer)  # link from current to next layer
+            temp = self.current_layer
+            self.current_layer = temp.get_next_layer()
 
     # def vectorize(self):
     #     pass
@@ -126,7 +128,7 @@ class AutoEncoder:
             sum_value = 0
             for node, weight in zip(current_layer.nodes,
                                     target_node.weight_vector):  # iterate through current layer nodes in parallel to the weights of the target node (target node has previous layer size weights).
-                sum_value += node.value * weight  # multiply weights and value
+                sum_value += node.get_value() * weight  # multiply weights and value
             sum_value += target_node.bias  # add in bias last
             target_node.z_value = sum_value  # value to sigmoid
             target_node.sigmoid_function()  # creates the a range between [0, 1] from the value z.
@@ -166,6 +168,18 @@ class AutoEncoder:
             self.sigmoid_activation_process(self.current_layer)  # performs sigmoid functions for layer
             self.current_layer = self.current_layer.get_next_layer()
 
+    def print_layer_neuron_data(self):
+        self.current_layer = self.input_layer
+        while True:
+            self.current_layer.print_layer_data()
+            for node in self.current_layer.nodes:
+                # node.print_neuron_data()
+                pass
+            if self.current_layer is self.output_layer:
+                break
+            else:
+                self.current_layer = self.current_layer.get_next_layer()
+
 
 # TODO: determine if class NetworkClient is needed... See program 4
 
@@ -176,7 +190,7 @@ class Layer:
     Structure as a linked list essentially.
     """
 
-    def __init__(self, num_nodes, is_input_layer, is_output_layer, input):
+    def __init__(self, num_nodes, is_input_layer, is_output_layer, input, prev=None):
         """
         Initialize a layer in the Neural Network.
         :param num_nodes: the number of nodes in the network
@@ -188,13 +202,13 @@ class Layer:
 
         self.no_of_nodes = num_nodes
 
-        self.nodes = None
+        self.nodes = []
 
         # TODO: determine if needed. Should consider iff we can do matrix multiplications...
         # self.weight_matrix = None  # a row is all the nodes in previous layer connected to a node in this layer
         # self.bias_vector = []  # contains the bias values with respect to the nodes
 
-        self._previous_layer = None
+        self._previous_layer = prev
         self._next_layer = None
 
         self._initialize_layer(input)  # creates the layer
@@ -271,6 +285,30 @@ class Layer:
         """
         self._previous_layer = prev_layer
 
+    def print_layer_data(self):
+        if self.is_input_layer:
+            string = "_________________________________________________________________"
+            center = " " * int(len(string) / 2) + "Input Layer" + " " * int(len(string) / 2)
+            print(center)
+            print("Next Layer Nodes = %s" % self.get_next_layer().nodes)
+        if self.is_output_layer:
+            string = "_________________________________________________________________"
+            center = " " * int(len(string) / 2) + "Output Layer" + " " * int(len(string) / 2)
+            print(center)
+            print("Previous Layer Node= %s" % self.get_previous_layer().nodes)
+        if self.is_output_layer == False and self.is_input_layer == False:
+            string = "_________________________________________________________________"
+            center = " " * int(len(string) / 2) + "Hidden Layer" + " " * int(len(string) / 2)
+            print(center)
+            print("Next Layer Nodes = %s" % self.get_next_layer().nodes)
+            if not self.get_previous_layer().is_input_layer:
+                print("Previous Layer Node= %s" % self.get_previous_layer().nodes)
+            else:
+                print("Previous Layer Node= Input Layer")
+
+        print("Number of Nodes = %s" % self.no_of_nodes)
+        print("Nodes = %s" % self.nodes)
+
 
 class Neuron:
     """
@@ -328,6 +366,12 @@ class Neuron:
         :return: None
         """
         self._value = 1 / (1 + np.exp(-self.z_value))
+
+    def print_neuron_data(self):
+        print("\t----------Neuron------------")
+        print("\t value = %s" % self.get_value())
+        print("\t bias = %s" % self.bias)
+        print("\t weight_vector = %s" % self.weight_vector)
 
 # TODO: not being used, at least not yet... using vectors and matrices currently...
 # class Weight:

@@ -1,0 +1,22 @@
+NEEDS TO BE DONE STILL:
+
+- Report
+-- Abstract
+-- Hypothesis
+-- Results
+-- Algorithm
+-- Experimental
+-- Conclusion
+-- Citations
+
+- STACKED AUTO ENCODER
+-- Feed into auto encoder
+-- all of it...
+
+- AUTO ENCODER:
+-- Cost/Error
+-- Stochastic Gradient Descent
+-- Predict
+-- Tune
+-- back prop
+

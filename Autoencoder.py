@@ -95,18 +95,24 @@ class AutoEncoder:
         for row in df.iterrows():  # iterate through each example
             if first_iter:  # first iteration sets up structure
                 self.input_layer = Layer(self.input_size, True, False, row, None)  # create hidden layer
+                print("Create Input Layer")
                 self.current_layer = self.input_layer
                 inner_encoder = AutoEncoder(self.num_hidden_layers, True, [3],
                                             self.hidden_node_sizes[0], 0.2, 0.45)  # int, bool, list, int
+                print("Create AutoEncoder as Hidden Layer")
                 inner_encoder.input_layer = Layer(inner_encoder.input_size, True, False, None, self.input_layer)
+                print("Create Inner AutoEncoder's Input Layer")
                 inner_encoder.current_layer = inner_encoder.input_layer
                 self.current_layer.set_next_layer(inner_encoder.current_layer)
                 inner_encoder.create_hidden_layer(inner_encoder.num_hidden_layers, inner_encoder.hidden_node_sizes)
+                print("Create AutoEncoder's Hidden Layer; next line shows hidden layer creation")
                 inner_encoder.output_layer = Layer(inner_encoder.output_size, False, True, None,
                                                    inner_encoder.current_layer)
+                print("Create AutoEncoder's Output Layer")
                 inner_encoder.current_layer.set_next_layer(inner_encoder.output_layer)
                 self.current_layer = inner_encoder.output_layer
                 self.output_layer = Layer(self.output_size, False, True, None, self.current_layer)
+                print("Create Output Layer")
                 self.static_output_layer = self.output_layer
                 self.current_layer.set_next_layer(self.output_layer)  # connect last hidden to output
                 first_iter = False
@@ -120,16 +126,15 @@ class AutoEncoder:
         :param num_nodes: list; number of nodes in hidden layer
         :return: None
         """
-        # TODO: number of nodes will decrease by 1 until size 1, then expand back out...
-        print(num_layers)
-        print(num_nodes)
         if len(num_nodes) is 1:
+            print("Create Hidden Layer")
             new_layer = Layer(num_nodes[0], False, False, None, self.current_layer)
             self.current_layer.set_next_layer(new_layer)
             temp = self.current_layer
             self.current_layer = temp.get_next_layer()
         else:
             for i in range(num_layers):  # create the user-defined number of layers
+                print("Create Hidden Layer")
                 new_layer = Layer(num_nodes[i], False, False, None, self.current_layer)
                 self.current_layer.set_next_layer(new_layer)  # link from current to next layer
                 temp = self.current_layer
@@ -146,7 +151,7 @@ class AutoEncoder:
         if next_layer is self.static_output_layer:
             self.linear_activation(current, next_layer)
         else:
-            print("sigmoid")
+            print("Sigmoid")
             for target_node in next_layer.nodes:  # for each node in the next layer, calculate activation function
                 sum_value = 0
                 for node, weight in zip(current_layer.nodes,
@@ -244,6 +249,7 @@ class AutoEncoder:
         Goes through network nodes and finds the sigmoid value for each node.
         :return: None
         """
+        print("Feed Forward Start")
         self.current_layer = self.input_layer
         while self.current_layer is not self.output_layer:  # once it is the output layer, no sigmoid value to compute
             self.activation_function_process(self.current_layer)  # performs sigmoid functions for layer

@@ -146,6 +146,7 @@ class AutoEncoder:
         if next_layer is self.static_output_layer:
             self.linear_activation(current, next_layer)
         else:
+            print("sigmoid")
             for target_node in next_layer.nodes:  # for each node in the next layer, calculate activation function
                 sum_value = 0
                 for node, weight in zip(current_layer.nodes,
@@ -158,6 +159,7 @@ class AutoEncoder:
 
     @staticmethod
     def linear_activation(current, next_layer):
+        print("Linear_activation")
         current_layer = current
         for target_node in next_layer.nodes:  # for each node in the next layer, calculate activation function
             sum_value = 0
@@ -184,6 +186,7 @@ class AutoEncoder:
             pass
 
     def back_propagation_process(self):
+        print("backprop")
         while self.current_layer.get_previous_layer() != None:
             if self.current_layer is self.static_output_layer:
                 j = 0

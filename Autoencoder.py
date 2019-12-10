@@ -91,7 +91,10 @@ class AutoEncoder:
         """
         df = data_obj.train_df
         first_iter = True  # create structure first iteration
-        batch_size = 10  # number of example per batch  # TODO: use stochastic gradient descent... idk where batch size matters.
+        batch_size = 10  # number of example per batch
+        j = 1
+        batch = []
+        num_of_iterations = 1
         for row in df.iterrows():  # iterate through each example
             if first_iter:  # first iteration sets up structure
                 self.input_layer = Layer(self.input_size, True, False, row, None)  # create hidden layer
@@ -116,8 +119,17 @@ class AutoEncoder:
                 self.static_output_layer = self.output_layer
                 self.current_layer.set_next_layer(self.output_layer)  # connect last hidden to output
                 first_iter = False
+
+            j += 1
+            if j % batch_size == 0:
+                self.gradient_descent(batch)
+                batch = []
+            batch.append(row)
+            self.feed_forward_process()  # creates sigmoid values for every node
             self.feed_forward_process()
             self.back_propagation_process()
+            num_of_iterations += 1
+        print("Number of iterations = %s" % num_of_iterations)
 
     def create_hidden_layer(self, num_layers, num_nodes):
         """

@@ -96,7 +96,7 @@ class AutoEncoder:
                 self.input_layer = Layer(self.input_size, True, False, row, None)  # create hidden layer
                 self.current_layer = self.input_layer
                 inner_encoder = AutoEncoder(self.num_hidden_layers, True, [3],
-                                            self.hidden_node_sizes[0])  # int, bool, list, int
+                                            self.hidden_node_sizes[0], 0.2, 0.45)  # int, bool, list, int
                 inner_encoder.input_layer = Layer(inner_encoder.input_size, True, False, None, self.input_layer)
                 inner_encoder.current_layer = inner_encoder.input_layer
                 self.current_layer.set_next_layer(inner_encoder.current_layer)
@@ -400,12 +400,13 @@ class Neuron:
         self.z_value = 0
         if weight_vector is not None:
             self.weight_change_vector = [0] * len(self.weight_vector)
+            self.previous_weight_change = [0] * len(weight_vector)
         else:
-            self.weight_change_vector = None
+            self.weight_change_vector = []
+            self.previous_weight_change = []
         self.bias_change = 0
-        self.weight_change_vector = [0] * len(weight_vector)
         self.previous_bias_change = 0
-        self.previous_weight_change = [0] * len(weight_vector)
+
 
 
 

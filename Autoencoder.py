@@ -30,6 +30,7 @@ class AutoEncoder:
 
     This class contains functions to structure, fit, and  predict auto encoders.
     """
+    static_output_layer = None
 
     def __init__(self, num_layers, is_stacked, num_hidden_layers, io_size, eta, alpha):
         """
@@ -106,6 +107,7 @@ class AutoEncoder:
                 inner_encoder.current_layer.set_next_layer(inner_encoder.output_layer)
                 self.current_layer = inner_encoder.output_layer
                 self.output_layer = Layer(self.output_size, False, True, None, self.current_layer)
+                self.static_output_layer = self.output_layer
                 self.current_layer.set_next_layer(self.output_layer)  # connect last hidden to output
                 first_iter = False
             self.feed_forward_process()
@@ -133,16 +135,30 @@ class AutoEncoder:
                 temp = self.current_layer
                 self.current_layer = temp.get_next_layer()
 
-    @staticmethod
-    def sigmoid_activation_process(current):
+    def activation_function_process(self, current):
         """
         Given the current layer (can be input), get the next layer. For each node in next layer, calculate the Wa+b
         :param current:
         :return: None
         """
-        # TODO: linear activation at output
         current_layer = current
         next_layer = current_layer.get_next_layer()  # next layer to calculate Z and sigmoid for.
+        if next_layer is self.static_output_layer:
+            self.linear_activation(current, next_layer)
+        else:
+            for target_node in next_layer.nodes:  # for each node in the next layer, calculate activation function
+                sum_value = 0
+                for node, weight in zip(current_layer.nodes,
+                                        target_node.weight_vector):  # iterate through current layer nodes in parallel to the weights of the target node (target node has previous layer size weights).
+                    sum_value += node.get_value() * weight  # multiply weights and value
+                sum_value += target_node.bias  # add in bias last
+                target_node.z_value = sum_value  # value to sigmoid
+                target_node.sigmoid_function()  # creates the a range between [0, 1] from the value z.
+            current = current_layer
+
+    @staticmethod
+    def linear_activation(current, next_layer):
+        current_layer = current
         for target_node in next_layer.nodes:  # for each node in the next layer, calculate activation function
             sum_value = 0
             for node, weight in zip(current_layer.nodes,
@@ -150,8 +166,6 @@ class AutoEncoder:
                 sum_value += node.get_value() * weight  # multiply weights and value
             sum_value += target_node.bias  # add in bias last
             target_node.z_value = sum_value  # value to sigmoid
-            target_node.sigmoid_function()  # creates the a range between [0, 1] from the value z.
-        current = current_layer
 
     def predict(self):
         # TODO: compare the output layer's values to the input layers (since actual is the input values).
@@ -174,7 +188,7 @@ class AutoEncoder:
             if self.current_layer.is_output_layer:
                 j = 0
                 for node in self.current_layer.nodes:
-                    node.delta = -(self.input_layer.nodes.value[j] - node.get_value())  # TODO: fix nodes.value
+                    node.delta = -(self.input_layer.nodes[0].get_value() - node.get_value())  # TODO: fix nodes.value
                     node.bias_change += node.delta
                     j += 1
                     i = 0
@@ -229,7 +243,7 @@ class AutoEncoder:
         """
         self.current_layer = self.input_layer
         while self.current_layer is not self.output_layer:  # once it is the output layer, no sigmoid value to compute
-            self.sigmoid_activation_process(self.current_layer)  # performs sigmoid functions for layer
+            self.activation_function_process(self.current_layer)  # performs sigmoid functions for layer
             self.current_layer = self.current_layer.get_next_layer()
 
     def print_layer_neuron_data(self):
@@ -397,7 +411,6 @@ class Neuron:
         self.bias_change = 0
         self.previous_bias_change = 0
 
-
     def adjust_bias(self, amount):
         """
         PLAN to give the location of the weight to adjust and a positive or negative value to adjust by.
@@ -405,7 +418,6 @@ class Neuron:
         :return: None
         """
         pass
-
 
     def adjust_weight(self, location, amount):
         """
@@ -416,7 +428,6 @@ class Neuron:
         """
         pass
 
-
     def change_value(self, new_val):
         """
         overwrite old value with new calculated value
@@ -425,7 +436,6 @@ class Neuron:
         """
         self._value = new_val
 
-
     def get_value(self):
         """
         getter function for value, either a sigmoidal value or a feature in the example
@@ -433,14 +443,12 @@ class Neuron:
         """
         return self._value
 
-
     def sigmoid_function(self):
         """
         activation function for node
         :return: None
         """
         self._value = 1 / (1 + np.exp(-self.z_value))
-
 
     def print_neuron_data(self):
         print("\t----------Neuron------------")

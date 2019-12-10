@@ -19,7 +19,8 @@ class MyTestCase(unittest.TestCase):
         data = Data('abalone', pd.read_csv(r'data/abalone.data', header=None), 8, False)  # load data
         df = data.df.sample(n=10)  # minimal data frame
         data.split_data(data_frame=df)  # sets test and train data
-        auto = AutoEncoder(data, 3, False, [3, 2, 3])
+        auto = AutoEncoder(3, False, [3, 2, 3], df.shape[1])
+        auto.initialize_auto_encoder(data_obj=data)
         auto.print_layer_neuron_data()
         """Structure is good to go"""
 

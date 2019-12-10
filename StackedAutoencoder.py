@@ -14,11 +14,11 @@ File: Contains the classes and function to create a stacked auto encoder. Struct
 import random
 import math
 import numpy as np
-
+from Autoencoder import AutoEncoder
 
 # TODO: arbitrary number of auto encoder layers (hidden layer); in our case, hidden layer is new auto encoder for stack,
 
-class SAE:
+class SAE(AutoEncoder):
     """
     SAE: Stacked Auto Encoder
     A SAE is an auto encoders whose N hidden layers are also N auto encoders.
@@ -32,7 +32,6 @@ class SAE:
 
     This class contains functions to structure, fit, and  predict auto encoders
     """
-
     def __init__(self, data_instance, input_output_size, num_layers):
 
         self.data_obj = data_instance

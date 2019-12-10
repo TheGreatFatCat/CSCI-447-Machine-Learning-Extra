@@ -46,46 +46,40 @@ class AutoEncoder:
     This class contains functions to structure, fit, and  predict auto encoders.
     """
 
-    def __init__(self, data_instance, num_layers, is_stacked, num_hidden_layers):
+    def __init__(self, num_layers, is_stacked, num_hidden_layers, io_size):
         """
         Initializes an AutoEncoder object.
-        :param data_instance: the data object of the data to train and test upon
         :param num_layers: arbitrarily set the number of hidden layers
         :param is_stacked: boolean to determine if the encoder is should feeding another encoder
-        :param num_hidden_layers: list ; number of  hidden layer
+        :param num_hidden_layers: list ; number of  hidden layer nodes
+        :param io_size: input and output layer node size
         """
-        self.data_obj = data_instance
-        self.df = self.data_obj.df  # data frame of preprocessed data
-        self.input_size = self.df.shape[1]
-        self.output_size = self.input_size
-        self.num_layers = num_layers
-        self.hidden_node_sizes = num_hidden_layers
-        self.is_stacked = is_stacked
-
+        self.is_stacked = is_stacked  # controls whether two or more encoders involved
+        self.input_size = io_size
+        self.output_size = io_size
+        self.hidden_node_sizes = num_hidden_layers  # vector of hidden layer node size
+        self.num_hidden_layers = num_layers
         self.input_layer = None
         self.current_layer = None
-        self.output_layer = None  # TODO: May not need
+        self.output_layer = None
 
-        self.initialize_auto_encoder()
-
-    def initialize_auto_encoder(self):
+    def initialize_auto_encoder(self, data_obj):
         """
         Create the structure of the neural network
         :return: None
         """
+        df = data_obj.train_df
         first_iter = True  # create structure first iteration
         batch_size = 10  # number of example per batch  # TODO: use stochastic gradient descent... idk where batch size matters.
-        for row in self.df.iterrows():  # iterate through each example
+        for row in df.iterrows():  # iterate through each example
             if first_iter:  # first iteration sets up structure
                 self.input_layer = Layer(self.input_size, True, False, row, None)  # create hidden layer
                 self.current_layer = self.input_layer
-                self.create_hidden_layer(self.num_layers, self.hidden_node_sizes)  # create layers in hidden layer
-
+                self.create_hidden_layer(self.num_hidden_layers,
+                                         self.hidden_node_sizes)  # create layers in hidden layer
                 self.output_layer = Layer(self.output_size, False, True, None, self.current_layer)
                 self.current_layer.set_next_layer(self.output_layer)  # connect last hidden to output
-
                 first_iter = False  # does not let a new structure to overwrite existing
-
             """
             training_process: feed forward, cost_process, back propagation (includes updating by using gradient descent)
             """
@@ -93,6 +87,16 @@ class AutoEncoder:
             # self.predict()  # TODO: finish function
             # self.cost_process()  # TODO: finish function
             # self.back_propagation_process()  # updates the weights, bias, and node values using gradient descent. # TODO finish function
+
+    def initialize_stacked_auto_encoder(self, data_obj):
+        df = data_obj.train_df
+        first_iter = True  # create structure first iteration
+        batch_size = 10  # number of example per batch  # TODO: use stochastic gradient descent... idk where batch size matters.
+        for row in df.iterrows():  # iterate through each example
+            if first_iter:  # first iteration sets up structure
+                self.input_layer = Layer(self.input_size, True, False, row, None)  # create hidden layer
+                self.current_layer = self.input_layer
+                inner_encoder = AutoEncoder(self.hidden_node_sizes[0], True, 1, self.hidden_node_sizes[0])
 
     def create_hidden_layer(self, num_layers, num_nodes):
         """
@@ -113,7 +117,6 @@ class AutoEncoder:
     #
     # def networkize(self):
     #     pass
-
 
     def sigmoid_activation_process(self, current):
         """

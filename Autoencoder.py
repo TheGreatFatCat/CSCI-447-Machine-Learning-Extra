@@ -97,6 +97,11 @@ class AutoEncoder:
                 self.input_layer = Layer(self.input_size, True, False, row, None)  # create hidden layer
                 self.current_layer = self.input_layer
                 inner_encoder = AutoEncoder(self.hidden_node_sizes[0], True, 1, self.hidden_node_sizes[0])
+                # TODO: (self)autoencoder input layer -> input layer of inner encoder
+                # TODO: inner encoder  input layer -> hidden layer of inner encoder
+                # TODO: hidden_layer of inner encoder -> output layer of inner encoder
+                # TODO: out put layer of inner encoder -> output layer of (SELF) autoencoder
+                # TODO: -> = edges from all nodes in layers.
 
     def create_hidden_layer(self, num_layers, num_nodes):
         """

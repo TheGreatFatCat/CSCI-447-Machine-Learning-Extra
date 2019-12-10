@@ -77,7 +77,7 @@ class AutoEncoder:
                 self.gradient_descent(batch)
                 batch = []
             batch.append(row)
-            # self.feed_forward_process()  # creates sigmoid values for every node
+            self.feed_forward_process()  # creates sigmoid values for every node
             # self.predict()  # TODO: finish function
             # self.cost_process()  # TODO: finish function
             # self.back_propagation_process()  # updates the weights, bias, and node values using gradient descent. # TODO finish function
@@ -108,6 +108,8 @@ class AutoEncoder:
                 self.output_layer = Layer(self.output_size, False, True, None, self.current_layer)
                 self.current_layer.set_next_layer(self.output_layer)  # connect last hidden to output
                 first_iter = False
+            self.feed_forward_process()
+            self.back_propagation_process()
 
     def create_hidden_layer(self, num_layers, num_nodes):
         """
@@ -172,7 +174,7 @@ class AutoEncoder:
             if self.current_layer.is_output_layer:
                 j = 0
                 for node in self.current_layer.nodes:
-                    node.delta = -(self.input_layer.nodes.value[j] - node.get_value())
+                    node.delta = -(self.input_layer.nodes.value[j] - node.get_value())  # TODO: fix nodes.value
                     node.bias_change += node.delta
                     j += 1
                     i = 0
@@ -235,15 +237,11 @@ class AutoEncoder:
         while True:
             self.current_layer.print_layer_data()
             for node in self.current_layer.nodes:
-                node.print_neuron_data()
                 pass
             if self.current_layer is self.output_layer:
                 break
             else:
                 self.current_layer = self.current_layer.get_next_layer()
-
-
-# TODO: determine if class NetworkClient is needed... See program 4
 
 
 class Layer:
@@ -261,18 +259,10 @@ class Layer:
         """
         self.is_input_layer = is_input_layer
         self.is_output_layer = is_output_layer
-
         self.no_of_nodes = num_nodes
-
         self.nodes = []
-
-        # TODO: determine if needed. Should consider iff we can do matrix multiplications...
-        # self.weight_matrix = None  # a row is all the nodes in previous layer connected to a node in this layer
-        # self.bias_vector = []  # contains the bias values with respect to the nodes
-
         self._previous_layer = prev
         self._next_layer = None
-
         self._initialize_layer(input)  # creates the layer
 
     def _initialize_hidden_nodes(self, weight_matrix, bias_vector):
@@ -408,74 +398,55 @@ class Neuron:
         self.previous_bias_change = 0
 
 
+    def adjust_bias(self, amount):
+        """
+        PLAN to give the location of the weight to adjust and a positive or negative value to adjust by.
+        :param amount: amount to adjust by
+        :return: None
+        """
+        pass
 
 
-def adjust_bias(self, amount):
-    """
-    PLAN to give the location of the weight to adjust and a positive or negative value to adjust by.
-    :param amount: amount to adjust by
-    :return: None
-    """
-    pass
+    def adjust_weight(self, location, amount):
+        """
+        PLAN to give the location of the weight to adjust and a positive or negative value to adjust by.
+        :param location: location of the weight to change
+        :param amount: amount to adjust by
+        :return: None
+        """
+        pass
 
 
-def adjust_weight(self, location, amount):
-    """
-    PLAN to give the location of the weight to adjust and a positive or negative value to adjust by.
-    :param location: location of the weight to change
-    :param amount: amount to adjust by
-    :return: None
-    """
-    pass
+    def change_value(self, new_val):
+        """
+        overwrite old value with new calculated value
+        :param new_val:
+        :return: None
+        """
+        self._value = new_val
 
 
-def change_value(self, new_val):
-    """
-    overwrite old value with new calculated value
-    :param new_val:
-    :return: None
-    """
-    self._value = new_val
+    def get_value(self):
+        """
+        getter function for value, either a sigmoidal value or a feature in the example
+        :return: value ; type float
+        """
+        return self._value
 
 
-def get_value(self):
-    """
-    getter function for value, either a sigmoidal value or a feature in the example
-    :return: value ; type float
-    """
-    return self._value
+    def sigmoid_function(self):
+        """
+        activation function for node
+        :return: None
+        """
+        self._value = 1 / (1 + np.exp(-self.z_value))
 
 
-def sigmoid_function(self):
-    """
-    activation function for node
-    :return: None
-    """
-    self._value = 1 / (1 + np.exp(-self.z_value))
-
-
-def print_neuron_data(self):
-    print("\t----------Neuron------------")
-    print("\t value = %s" % self.get_value())
-    print("\t bias = %s" % self.bias)
-    if self.weight_vector is not None:
-        print("\t weight_vector = ", list(self.weight_vector), "\n")
-    else:
-        print("\t weight_vector = ", None, "\n")
-
-# TODO: not being used, at least not yet... using vectors and matrices currently...
-# class Weight:
-#     """
-#     creates the weights associated to a neuron within a layer
-#     """
-#     def __init__(self, L_neuron, R_neuron):
-#         self.L_neuron = L_neuron
-#         self.R_neuron = R_neuron
-#         self.weight = float(random.randint(-1, 1)) / 100
-#         self.weight_change = 0
-#         self.prev_change = 0
-#         self.momentum_cof = .5
-#         self.eta = .1
-#
-#     def set_weight(self, weight):
-#         self.weight = weight
+    def print_neuron_data(self):
+        print("\t----------Neuron------------")
+        print("\t value = %s" % self.get_value())
+        print("\t bias = %s" % self.bias)
+        if self.weight_vector is not None:
+            print("\t weight_vector = ", list(self.weight_vector), "\n")
+        else:
+            print("\t weight_vector = ", None, "\n")

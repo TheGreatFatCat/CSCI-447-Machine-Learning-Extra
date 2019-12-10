@@ -31,7 +31,7 @@ class AutoEncoder:
     This class contains functions to structure, fit, and  predict auto encoders.
     """
 
-    def __init__(self, num_layers, is_stacked, num_hidden_layers, io_size):
+    def __init__(self, num_layers, is_stacked, num_hidden_layers, io_size, eta, alpha):
         """
         Initializes an AutoEncoder object.
         :param num_layers: int ; arbitrarily set the number of hidden layers
@@ -47,6 +47,8 @@ class AutoEncoder:
         self.input_layer = None
         self.current_layer = None
         self.output_layer = None
+        self.eta = eta
+        self.alpha = alpha
 
     def initialize_auto_encoder(self, data_obj):
         """
@@ -56,6 +58,8 @@ class AutoEncoder:
         df = data_obj.train_df
         first_iter = True  # create structure first iteration
         batch_size = 10  # number of example per batch  # TODO: use stochastic gradient descent... idk where batch size matters.
+        j = 0
+        batch = []
         for row in df.iterrows():  # iterate through each example
             if first_iter:  # first iteration sets up structure
                 self.input_layer = Layer(self.input_size, True, False, row, None)  # create hidden layer
@@ -68,7 +72,12 @@ class AutoEncoder:
             """
             training_process: feed forward, cost_process, back propagation (includes updating by using gradient descent)
             """
-            self.feed_forward_process()  # creates sigmoid values for every node
+            j += 1
+            if j % batch_size == 0:
+                self.gradient_descent(batch)
+                batch = []
+            batch.append(row)
+            # self.feed_forward_process()  # creates sigmoid values for every node
             # self.predict()  # TODO: finish function
             # self.cost_process()  # TODO: finish function
             # self.back_propagation_process()  # updates the weights, bias, and node values using gradient descent. # TODO finish function
@@ -159,11 +168,57 @@ class AutoEncoder:
             pass
 
     def back_propagation_process(self):
-        pass
+        while self.current_layer.get_previous_layer() != None:
+            if self.current_layer.is_output_layer:
+                j = 0
+                for node in self.current_layer.nodes:
+                    node.delta = -(self.input_layer.nodes.value[j] - node.get_value())
+                    node.bias_change += node.delta
+                    j += 1
+                    i = 0
+                    for weight in node.weight_vector:
+                        node.weight_change_vector[i] = node.delta * weight
+            else:
+                f = 0
+                for node in self.current_layer.nodes:
+                    summer = 0
+                    for noder in self.current_layer.get_next_layer().nodes:
+                        summer += noder.delta * noder.weight[f]
+                    node.delta = node.get_value * (1 - node.value) * summer
+                    node.bias_change += node.delta
+                    u = 0
+                    for weight in node.weight_vector:
+                        node.weight_change_vector[u] += node.delta * self.current_layer.get_previous_layer().nodes[
+                            u].value
+                    f += 1
+            self.current_layer = self.current_layer.get_previous_layer()
+        return
 
-    def gradient_descent(self):
+    def gradient_descent(self, batch):
         # TODO: not sure if needed for back prop... not mentioned in assignment
-        pass
+        for input in batch:
+            j = 0
+            for node in self.input_layer.nodes:
+                node.value = input[j]
+                j += 1
+            self.feed_forward_process()
+            self.back_propagation_process()
+        self.current_layer = self.output_layer
+        while self.current_layer.get_previous_layer() != None:
+            for node in self.current_layer.nodes:
+                node.previous_bias_change = -self.eta * node.bias_change / len(
+                    batch) + self.alpha * node.previous_bias_change
+                node.bias += node.previous_bias_change
+                node.bias_change = 0
+                i = 0
+                for weight in node.weight_vector:
+                    node.previous_weight_change[i] = -self.eta * node.weight_change_vector[i] / len(
+                        batch) + self.alpha * node.previous_weight_change[i]
+                    weight += node.previous_weight_change[i]
+                    node.weight_change_vector[i] = 0
+                    i += 1
+            self.current_layer = self.current_layer.get_previous_layer()
+        return
 
     def feed_forward_process(self):
         """
@@ -347,54 +402,65 @@ class Neuron:
             self.weight_change_vector = [0] * len(self.weight_vector)
         else:
             self.weight_change_vector = None
+        self.bias_change = 0
+        self.weight_change_vector = [0] * len(weight_vector)
+        self.previous_bias_change = 0
+        self.previous_weight_change = [0] * len(weight_vector)
 
-    def adjust_bias(self, amount):
-        """
-        PLAN to give the location of the weight to adjust and a positive or negative value to adjust by.
-        :param amount: amount to adjust by
-        :return: None
-        """
-        pass
 
-    def adjust_weight(self, location, amount):
-        """
-        PLAN to give the location of the weight to adjust and a positive or negative value to adjust by.
-        :param location: location of the weight to change
-        :param amount: amount to adjust by
-        :return: None
-        """
-        pass
 
-    def change_value(self, new_val):
-        """
-        overwrite old value with new calculated value
-        :param new_val:
-        :return: None
-        """
-        self._value = new_val
+def adjust_bias(self, amount):
+    """
+    PLAN to give the location of the weight to adjust and a positive or negative value to adjust by.
+    :param amount: amount to adjust by
+    :return: None
+    """
+    pass
 
-    def get_value(self):
-        """
-        getter function for value, either a sigmoidal value or a feature in the example
-        :return: value ; type float
-        """
-        return self._value
 
-    def sigmoid_function(self):
-        """
-        activation function for node
-        :return: None
-        """
-        self._value = 1 / (1 + np.exp(-self.z_value))
+def adjust_weight(self, location, amount):
+    """
+    PLAN to give the location of the weight to adjust and a positive or negative value to adjust by.
+    :param location: location of the weight to change
+    :param amount: amount to adjust by
+    :return: None
+    """
+    pass
 
-    def print_neuron_data(self):
-        print("\t----------Neuron------------")
-        print("\t value = %s" % self.get_value())
-        print("\t bias = %s" % self.bias)
-        if self.weight_vector is not None:
-            print("\t weight_vector = ", list(self.weight_vector), "\n")
-        else:
-            print("\t weight_vector = ", None, "\n")
+
+def change_value(self, new_val):
+    """
+    overwrite old value with new calculated value
+    :param new_val:
+    :return: None
+    """
+    self._value = new_val
+
+
+def get_value(self):
+    """
+    getter function for value, either a sigmoidal value or a feature in the example
+    :return: value ; type float
+    """
+    return self._value
+
+
+def sigmoid_function(self):
+    """
+    activation function for node
+    :return: None
+    """
+    self._value = 1 / (1 + np.exp(-self.z_value))
+
+
+def print_neuron_data(self):
+    print("\t----------Neuron------------")
+    print("\t value = %s" % self.get_value())
+    print("\t bias = %s" % self.bias)
+    if self.weight_vector is not None:
+        print("\t weight_vector = ", list(self.weight_vector), "\n")
+    else:
+        print("\t weight_vector = ", None, "\n")
 
 # TODO: not being used, at least not yet... using vectors and matrices currently...
 # class Weight:

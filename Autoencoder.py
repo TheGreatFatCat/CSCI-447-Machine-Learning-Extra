@@ -95,7 +95,7 @@ class AutoEncoder:
                 inner_encoder.output_layer = Layer(inner_encoder.output_size, False, True, None,
                                                    inner_encoder.current_layer)
                 inner_encoder.current_layer.set_next_layer(inner_encoder.output_layer)
-                self.current_layer = inner_encoder.current_layer
+                self.current_layer = inner_encoder.output_layer
                 self.output_layer = Layer(self.output_size, False, True, None, self.current_layer)
                 self.current_layer.set_next_layer(self.output_layer)  # connect last hidden to output
                 first_iter = False

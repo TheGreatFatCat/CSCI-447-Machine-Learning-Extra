@@ -185,7 +185,7 @@ class AutoEncoder:
 
     def back_propagation_process(self):
         while self.current_layer.get_previous_layer() != None:
-            if self.current_layer.is_output_layer:
+            if self.current_layer is self.static_output_layer:
                 j = 0
                 for node in self.current_layer.nodes:
                     node.delta = -(self.input_layer.nodes[0].get_value() - node.get_value())  # TODO: fix nodes.value
@@ -199,13 +199,13 @@ class AutoEncoder:
                 for node in self.current_layer.nodes:
                     summer = 0
                     for noder in self.current_layer.get_next_layer().nodes:
-                        summer += noder.delta * noder.weight[f]
-                    node.delta = node.get_value * (1 - node.value) * summer
+                        summer += noder.delta * noder.weight_vector[f]
+                    node.delta = node.get_value() * (1 - node.get_value()) * summer
                     node.bias_change += node.delta
                     u = 0
-                    for weight in node.weight_vector:
+                    for weight in node.weight_vector:  # TODO: not using weight
                         node.weight_change_vector[u] += node.delta * self.current_layer.get_previous_layer().nodes[
-                            u].value
+                            u].get_value()
                     f += 1
             self.current_layer = self.current_layer.get_previous_layer()
         return
@@ -289,7 +289,7 @@ class Layer:
         input = [0] * self.no_of_nodes  # input is 0 for non input layer nodes; sigmoid not calculated
         nodes = []  # list to hold nodes
         for neuron in range(self.no_of_nodes):
-            n = Neuron(input[neuron], bias_vector[neuron], [])
+            n = Neuron(input[neuron], bias_vector[neuron], [], len(self._previous_layer.nodes))
             for w in weight_matrix:
                 n.weight_vector.append(w[neuron])
             nodes.append(n)
@@ -317,9 +317,9 @@ class Layer:
         initializes the layer using the other initializing functions.
         :return: None
         """
-        if self.is_input_layer and input is not None:  # initialize input layer
+        if self.get_previous_layer() is None:  # initialize input layer
             for i in input[1]:
-                self.nodes.append(Neuron(i, None, None))
+                self.nodes.append(Neuron(i, None, None, 0))
         else:  # initialize hidden_layer and output
             weight_matrix, bias_vector = self._initialize_weights()
             self.nodes = self._initialize_hidden_nodes(weight_matrix, bias_vector)
@@ -390,7 +390,7 @@ class Neuron:
     creates the neurons within a layer.
     """
 
-    def __init__(self, value, bias, weight_vector):
+    def __init__(self, value, bias, weight_vector, prev_node_nums):
         """
         Initialize a neuron in a layer
         :param value: the value it currently contains
@@ -402,12 +402,8 @@ class Neuron:
         self.weight_vector = weight_vector
         self.delta = 0
         self.z_value = 0
-        if weight_vector is not None:
-            self.weight_change_vector = [0] * len(self.weight_vector)
-            self.previous_weight_change = [0] * len(weight_vector)
-        else:
-            self.weight_change_vector = []
-            self.previous_weight_change = []
+        self.weight_change_vector = [0] * prev_node_nums
+        self.previous_weight_change = []
         self.bias_change = 0
         self.previous_bias_change = 0
 

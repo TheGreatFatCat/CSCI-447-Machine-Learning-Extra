@@ -19,7 +19,7 @@ class MyTestCase(unittest.TestCase):
         data = Data('abalone', pd.read_csv(r'data/abalone.data', header=None), 8, False)  # load data
         df = data.df.sample(n=10)  # minimal data frame
         data.split_data(data_frame=df)  # sets test and train data
-        auto = AutoEncoder(3, False, [3, 2, 3], df.shape[1])
+        auto = AutoEncoder(1, False, [3, 2, 3], df.shape[1])
         auto.initialize_auto_encoder(data_obj=data)
         auto.print_layer_neuron_data()
         """Structure is good to go"""
@@ -32,6 +32,23 @@ class MyTestCase(unittest.TestCase):
             current = current.get_previous_layer()
         """traversing is good; from printing above (forwards) and right above (backwards)"""
 
+
+    def test_stack_encoder_structure(self):
+        data = Data('abalone', pd.read_csv(r'data/abalone.data', header=None), 8, False)  # load data
+        df = data.df.sample(n=10)  # minimal data frame
+        data.split_data(data_frame=df)  # sets test and train data
+        auto = AutoEncoder(3, False, [3, 2, 3], df.shape[1])
+        auto.initialize_stacked_auto_encoder(data_obj=data)
+        auto.print_layer_neuron_data()
+
+
+
+    def test_check(self):
+        a = 1
+        b = a
+        print(a, b)
+        a = 2
+        print(a, b)
 
 
 if __name__ == '__main__':

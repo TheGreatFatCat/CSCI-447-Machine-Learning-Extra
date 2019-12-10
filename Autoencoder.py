@@ -10,25 +10,10 @@ Instructor: John Shepherd
 
 File: contains classes and functions that are used primarily for the purpose of creating an AutoEncoder
 """
-# TODO: See TODO comments below to find out what you can do...
-# TODO: HAVE NOT DONE TESTING!!! Feel free to add testing
+
 import random
 import math
 import numpy as np
-
-# TODO: ALEX Remove when read...
-""" 
-________________________________________________________________________________________________________________________
-READ THIS
-------------------------------------------------------------------------------------------------------------------------
-An auto encoder is a neural network! 
-- neural_net.fit(X, Y)  where X is the vector of data and Y is the labels
-
-*** The difference from a neural network and auto encoder is the following ***
-- The labels are the input vector
-- neural_net.fit(X, X)  where X is the vector of data and X is the labels
-------------------------------------------------------------------------------------------------------------------------
-"""
 
 
 class AutoEncoder:
@@ -49,10 +34,10 @@ class AutoEncoder:
     def __init__(self, num_layers, is_stacked, num_hidden_layers, io_size):
         """
         Initializes an AutoEncoder object.
-        :param num_layers: arbitrarily set the number of hidden layers
-        :param is_stacked: boolean to determine if the encoder is should feeding another encoder
+        :param num_layers: int ; arbitrarily set the number of hidden layers
+        :param is_stacked: boolean ; to determine if the encoder is feeding another encoder
         :param num_hidden_layers: list ; number of  hidden layer nodes
-        :param io_size: input and output layer node size
+        :param io_size: int ; input and output layer node size
         """
         self.is_stacked = is_stacked  # controls whether two or more encoders involved
         self.input_size = io_size
@@ -88,9 +73,9 @@ class AutoEncoder:
             # self.cost_process()  # TODO: finish function
             # self.back_propagation_process()  # updates the weights, bias, and node values using gradient descent. # TODO finish function
 
-    def initialize_stacked_auto_encoder(self, data_obj):
+    def initialize_stacked_auto_encoder(self, data_obj):  # , #num_layers, num_hidden_layer):
         """
-        Creates the stack of auto encoders
+        Initializes another auto encoder such that the current auto encoder is
         :param data_obj:
         :return:
         """
@@ -101,12 +86,19 @@ class AutoEncoder:
             if first_iter:  # first iteration sets up structure
                 self.input_layer = Layer(self.input_size, True, False, row, None)  # create hidden layer
                 self.current_layer = self.input_layer
-                inner_encoder = AutoEncoder(self.hidden_node_sizes[0], True, 1, self.hidden_node_sizes[0])
-                # TODO: (self)autoencoder input layer -> input layer of inner encoder
-                # TODO: inner encoder  input layer -> hidden layer of inner encoder
-                # TODO: hidden_layer of inner encoder -> output layer of inner encoder
-                # TODO: out put layer of inner encoder -> output layer of (SELF) autoencoder
-                # TODO: -> = edges from all nodes in layers.
+                inner_encoder = AutoEncoder(self.num_hidden_layers, True, [3],
+                                            self.hidden_node_sizes[0])  # int, bool, list, int
+                inner_encoder.input_layer = Layer(inner_encoder.input_size, True, False, None, self.input_layer)
+                inner_encoder.current_layer = inner_encoder.input_layer
+                self.current_layer.set_next_layer(inner_encoder.current_layer)
+                inner_encoder.create_hidden_layer(inner_encoder.num_hidden_layers, inner_encoder.hidden_node_sizes)
+                inner_encoder.output_layer = Layer(inner_encoder.output_size, False, True, None,
+                                                   inner_encoder.current_layer)
+                inner_encoder.current_layer.set_next_layer(inner_encoder.output_layer)
+                self.current_layer = inner_encoder.current_layer
+                self.output_layer = Layer(self.output_size, False, True, None, self.current_layer)
+                self.current_layer.set_next_layer(self.output_layer)  # connect last hidden to output
+                first_iter = False
 
     def create_hidden_layer(self, num_layers, num_nodes):
         """
@@ -116,24 +108,28 @@ class AutoEncoder:
         :return: None
         """
         # TODO: number of nodes will decrease by 1 until size 1, then expand back out...
-        for i in range(num_layers):  # create the user-defined number of layers
-            new_layer = Layer(num_nodes[i], False, False, None, self.current_layer)
-            self.current_layer.set_next_layer(new_layer)  # link from current to next layer
+        print(num_layers)
+        print(num_nodes)
+        if len(num_nodes) is 1:
+            new_layer = Layer(num_nodes[0], False, False, None, self.current_layer)
+            self.current_layer.set_next_layer(new_layer)
             temp = self.current_layer
             self.current_layer = temp.get_next_layer()
+        else:
+            for i in range(num_layers):  # create the user-defined number of layers
+                new_layer = Layer(num_nodes[i], False, False, None, self.current_layer)
+                self.current_layer.set_next_layer(new_layer)  # link from current to next layer
+                temp = self.current_layer
+                self.current_layer = temp.get_next_layer()
 
-    # def vectorize(self):
-    #     pass
-    #
-    # def networkize(self):
-    #     pass
-
-    def sigmoid_activation_process(self, current):
+    @staticmethod
+    def sigmoid_activation_process(current):
         """
         Given the current layer (can be input), get the next layer. For each node in next layer, calculate the Wa+b
-        :param current_layer:
+        :param current:
         :return: None
         """
+        # TODO: linear activation at output
         current_layer = current
         next_layer = current_layer.get_next_layer()  # next layer to calculate Z and sigmoid for.
         for target_node in next_layer.nodes:  # for each node in the next layer, calculate activation function
@@ -161,9 +157,6 @@ class AutoEncoder:
         sum_value = 0
         for node in self.output_layer.nodes:
             pass
-
-    # def set_output(self):
-    #     pass
 
     def back_propagation_process(self):
         pass
@@ -265,7 +258,7 @@ class Layer:
         initializes the layer using the other initializing functions.
         :return: None
         """
-        if self.is_input_layer:  # initialize input layer
+        if self.is_input_layer and input is not None:  # initialize input layer
             for i in input[1]:
                 self.nodes.append(Neuron(i, None, None))
         else:  # initialize hidden_layer and output
@@ -350,6 +343,10 @@ class Neuron:
         self.weight_vector = weight_vector
         self.delta = 0
         self.z_value = 0
+        if weight_vector is not None:
+            self.weight_change_vector = [0] * len(self.weight_vector)
+        else:
+            self.weight_change_vector = None
 
     def adjust_bias(self, amount):
         """

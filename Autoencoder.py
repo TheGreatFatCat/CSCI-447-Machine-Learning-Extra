@@ -89,6 +89,11 @@ class AutoEncoder:
             # self.back_propagation_process()  # updates the weights, bias, and node values using gradient descent. # TODO finish function
 
     def initialize_stacked_auto_encoder(self, data_obj):
+        """
+        Creates the stack of auto encoders
+        :param data_obj:
+        :return:
+        """
         df = data_obj.train_df
         first_iter = True  # create structure first iteration
         batch_size = 10  # number of example per batch  # TODO: use stochastic gradient descent... idk where batch size matters.

@@ -17,11 +17,12 @@ class MyTestCase(unittest.TestCase):
         :return:
         """
         data = Data('abalone', pd.read_csv(r'data/abalone.data', header=None), 8, False)  # load data
-        df = data.df.sample(n=10)  # minimal data frame
+        df = data.df.sample(n=100)  # minimal data frame
         data.split_data(data_frame=df)  # sets test and train data
         auto = AutoEncoder(1, False, [3, 2, 3], df.shape[1], 0.2, 0.45)
-        auto.initialize_auto_encoder(data_obj=data)
+        auto.fit_auto_encoder(data_obj=data)
         auto.print_layer_neuron_data()
+        auto.test(data.test_df)
         """Structure is good to go"""
 
         current = auto.output_layer
@@ -35,12 +36,13 @@ class MyTestCase(unittest.TestCase):
 
     def test_stack_encoder_structure(self):
         data = Data('abalone', pd.read_csv(r'data/abalone.data', header=None), 8, False)  # load data
-        df = data.df.sample(n=10)  # minimal data frame
-        data.split_data(data_frame=df)  # sets test and train data
-        auto = AutoEncoder(3, False, [3, 2, 3], df.shape[1], 0.2, 0.45)
-        auto.initialize_stacked_auto_encoder(data_obj=data)
+        data.df = data.df.sample(n= 100)  # minimal data frame
+        data.split_data(data_frame=data.df)  # sets test and train data
+        auto = AutoEncoder(3, False, [3, 2, 3], data.train_df.shape[1], 0.2, 0.45)
+        auto.fit_stacked_auto_encoder(data)
         auto.print_layer_neuron_data()
-
+        print("Testing")
+        auto.test(data.test_df)
 
 
     def test_check(self):

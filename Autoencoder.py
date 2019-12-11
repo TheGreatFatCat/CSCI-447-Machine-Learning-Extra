@@ -158,7 +158,6 @@ class AutoEncoder:
         if next_layer is output:
             self.linear_activation(current, next_layer)
         else:
-            print("Sigmoid")
             for target_node in next_layer.nodes:  # for each node in the next layer, calculate activation function
                 sum_value = 0
                 for node, weight in zip(current_layer.nodes,
@@ -180,27 +179,22 @@ class AutoEncoder:
             sum_value += target_node.bias  # add in bias last
             target_node.set_value(sum_value)  # value to sigmoid
             l.append(sum_value)
-        print("Linear Activation: ", l)
 
     def test(self, test_data):
         print("Testing")
         for row in test_data.iterrows():
             self.current_layer = self.input_layer
             for node, new_input in zip(self.input_layer.nodes, row[1]):
-                print("node : ", node)
-                print("new_input : ", new_input)
                 node.set_value(new_input)
             self.feed_forward_process()
             self.print_output()
 
     def back_propagation_process(self):
-        print("backprop")
-
         while self.current_layer.get_previous_layer() != None:
             if self.current_layer is self.output_layer:
                 j = 0
                 for node in self.current_layer.nodes:
-                    node.delta = -(self.input_layer.nodes[0].get_value() - node.get_value())
+                    node.delta = -(self.input_layer.nodes[j].get_value() - node.get_value())
                     node.bias_change += node.delta
                     j += 1
                     i = 0
@@ -277,7 +271,6 @@ class AutoEncoder:
         values1 = []
         values2 = []
         for node1, node2 in zip(self.output_layer.nodes, self.input_layer.nodes):
-            print("Weight Vector : ", node1.weight_vector)
             values1.append(node1.get_value())
             values2.append(node2.get_value())
         print("Output: ", values1, "\nInput: ", values2)

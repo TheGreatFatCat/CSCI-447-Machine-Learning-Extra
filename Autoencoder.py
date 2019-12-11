@@ -60,30 +60,22 @@ class AutoEncoder:
         """
         df = data_obj.train_df
         first_iter = True  # create structure first iteration
-        batch_size = 10  # number of example per batch  # TODO: use stochastic gradient descent... idk where batch size matters.
         j = 0
-        batch = []
-        for row in df.iterrows():  # iterate through each example
-            if first_iter:  # first iteration sets up structure
-                self.input_layer = Layer(self.input_size, True, False, row, None)  # create hidden layer
-                self.current_layer = self.input_layer
-                self.create_hidden_layer(self.num_hidden_layers,
-                                         self.hidden_node_sizes)  # create layers in hidden layer
-                self.output_layer = Layer(self.output_size, False, True, None, self.current_layer)
-                self.current_layer.set_next_layer(self.output_layer)  # connect last hidden to output
-                first_iter = False  # does not let a new structure to overwrite existing
-            """
-            training_process: feed forward, cost_process, back propagation (includes updating by using gradient descent)
-            """
-            j += 1
-            if j % batch_size == 0:
-                self.training(self, batch)
-                batch = []
-            batch.append(row)
-            self.feed_forward_process()  # creates sigmoid values for every node
-            # self.predict()  # TODO: finish function
-            # self.cost_process()  # TODO: finish function
-            # self.back_propagation_process()  # updates the weights, bias, and node values using gradient descent. # TODO finish function
+        n = 0
+        num_of_iterations = 0
+        while num_of_iterations < 100:
+            for row in df.iterrows():  # iterate through each example
+                if first_iter:  # first iteration sets up structure
+                    self.input_layer = Layer(self.input_size, True, False, row, None)  # create hidden layer
+                    self.current_layer = self.input_layer
+                    self.create_hidden_layer(self.num_hidden_layers,
+                                             self.hidden_node_sizes)  # create layers in hidden layer
+                    self.output_layer = Layer(self.output_size, False, True, None, self.current_layer)
+                    self.current_layer.set_next_layer(self.output_layer)  # connect last hidden to output
+                    first_iter = False  # does not let a new structure to overwrite existing
+                n += 1
+                self.training(self, row[1])
+            num_of_iterations +=1
 
     def fit_stacked_auto_encoder(self, data_obj):  # , #num_layers, num_hidden_layer):
         """
@@ -93,39 +85,41 @@ class AutoEncoder:
         """
         df = data_obj.train_df
         first_iter = True  # create structure first iteration
-        num_of_iterations = 50
-        while num_of_iterations <= 100:
+        num_of_iterations = 0
+        n = 0
+        while num_of_iterations <= 50:
             for row in df.iterrows():  # iterate through each example
                 if first_iter:  # first iteration sets up structure
                     self.input_layer = Layer(self.input_size, True, False, row, None)  # create hidden layer
-                    print("Create Input Layer")
+                    # print("Create Input Layer")
                     self.current_layer = self.input_layer
                     self.inner_encoder = AutoEncoder(self.num_hidden_layers, True, [3],
                                                      self.hidden_node_sizes[0], 0.2, 0.45)  # int, bool, list, int
-                    print("Create AutoEncoder as Hidden Layer")
+                    # print("Create AutoEncoder as Hidden Layer")
                     self.inner_encoder.input_layer = Layer(self.inner_encoder.input_size, True, False, None,
                                                            self.input_layer)
-                    print("Create Inner AutoEncoder's Input Layer")
+                    # print("Create Inner AutoEncoder's Input Layer")
                     self.inner_encoder.current_layer = self.inner_encoder.input_layer
                     self.current_layer.set_next_layer(self.inner_encoder.current_layer)
                     self.inner_encoder.create_hidden_layer(self.inner_encoder.num_hidden_layers,
                                                            self.inner_encoder.hidden_node_sizes)
-                    print("Create AutoEncoder's Hidden Layer; next line shows hidden layer creation")
+                    # print("Create AutoEncoder's Hidden Layer; next line shows hidden layer creation")
                     self.inner_encoder.output_layer = Layer(self.inner_encoder.output_size, False, True, None,
                                                             self.inner_encoder.current_layer)
-                    print("Create AutoEncoder's Output Layer")
+                    # print("Create AutoEncoder's Output Layer")
                     self.inner_encoder.current_layer.set_next_layer(self.inner_encoder.output_layer)
                     self.current_layer = self.inner_encoder.output_layer
                     self.output_layer = Layer(self.output_size, False, True, None, self.current_layer)
-                    print("Create Output Layer")
+                    # print("Create Output Layer")
                     self.current_layer.set_next_layer(self.output_layer)  # connect last hidden to output
                     first_iter = False
+                n += 1
                 self.training(self, row[1])
                 inp_v = []
                 for node in self.input_layer.get_next_layer().nodes:
                     inp_v.append(node.get_value())
                 self.training(self.inner_encoder, inp_v)
-                num_of_iterations += 1
+            num_of_iterations += 1
 
     def create_hidden_layer(self, num_layers, num_nodes):
         """
@@ -135,14 +129,12 @@ class AutoEncoder:
         :return: None
         """
         if len(num_nodes) is 1:
-            print("Create Hidden Layer")
             new_layer = Layer(num_nodes[0], False, False, None, self.current_layer)
             self.current_layer.set_next_layer(new_layer)
             temp = self.current_layer
             self.current_layer = temp.get_next_layer()
         else:
             for i in range(num_layers):  # create the user-defined number of layers
-                print("Create Hidden Layer")
                 new_layer = Layer(num_nodes[i], False, False, None, self.current_layer)
                 self.current_layer.set_next_layer(new_layer)  # link from current to next layer
                 temp = self.current_layer
@@ -170,6 +162,12 @@ class AutoEncoder:
             current = current_layer
 
     def linear_activation(self, current, next_layer):
+        """
+        Performs linear activation function
+        :param current: the current layer ; layer
+        :param next_layer: the next layer to current, layer
+        :return: None
+        """
         l = []
         current_layer = current
         for target_node in next_layer.nodes:  # for each node in the next layer, calculate activation function
@@ -180,69 +178,82 @@ class AutoEncoder:
             sum_value += target_node.bias  # add in bias last
             target_node.set_value(sum_value)  # value to sigmoid
             l.append(sum_value)
-        print(l)
 
-    def test(self, test_data):
-        print("Testing")
-        for row in test_data.iterrows():
+    def test(self, df):
+        """
+        Given a test set, it runs the examples through the network and finds the means squared error
+        :param df: dataframe; the test data frame
+        :return: None
+        """
+        print("_____________________________")
+        print("-----------Testing-----------")
+        print("Size of Test Set: ", len(df))
+        test_data = df
+        actual = []
+        predicted = []
+        for row in test_data.iterrows():  # iterate through the data
             self.current_layer = self.input_layer
-            for node, new_input in zip(self.input_layer.nodes, row[1]):
+            for node, new_input in zip(self.input_layer.nodes, row[1]):  # set the input layer values
                 node.set_value(new_input)
-            self.feed_forward_process()
-            self.print_output()
+            self.feed_forward_process()  # feed forward to get values
+            actual, predicted = self.print_output()  # get the predicted values and the actual
+        squared = 0
+        for i, p in zip(actual, predicted):
+            squared += (i - p) ** 2
+        ave = squared / len(predicted)
+        print("Means Squared Error: ", ave, "\n\n")
 
     def back_propagation_process(self):
-        while self.current_layer.get_previous_layer() != None:
-            if self.current_layer is self.output_layer:
+        while self.current_layer.get_previous_layer() != None:  # goes backwards through code
+            if self.current_layer is self.output_layer:  # different for output layer than rest
                 j = 0
-                for node in self.current_layer.nodes:
-                    node.delta = -(self.input_layer.nodes[j].get_value() - node.get_value())
-                    node.bias_change += node.delta
+                for node in self.current_layer.nodes:  # goes through all nodes
+                    node.delta = -(self.input_layer.nodes[
+                                       j].get_value() - node.get_value())  # activation function is linear
+                    node.bias_change += node.delta  # for batch change in training function
                     j += 1
                     i = 0
-                    for weight in node.weight_vector:
-                        node.weight_change_vector[i] = node.delta * weight
-            else:
+                    for weight in node.weight_vector:  # for changing weight
+                        node.weight_change_vector[i] = node.delta * self.current_layer.get_previous_layer().nodes[
+                            i].get_value()  # adjusts values for weights
+            else:  # works different in all other layers
                 f = 0
-                for node in self.current_layer.nodes:
+                for node in self.current_layer.nodes:  # goes through nodes
                     summer = 0
-                    for noder in self.current_layer.get_next_layer().nodes:
+                    for noder in self.current_layer.get_next_layer().nodes:  # summing from next layer
                         summer += noder.delta * noder.weight_vector[f]
-                    node.delta = node.get_value() * (1 - node.get_value()) * summer
-                    node.bias_change += node.delta
+                    node.delta = node.get_value() * (1 - node.get_value()) * summer  # setting delta for current node
+                    node.bias_change += node.delta  # for batch change in training function
                     u = 0
-                    for weight in node.weight_vector:  # TODO: not using weight
+                    for weight in node.weight_vector:  # iterates through incoming weights
                         node.weight_change_vector[u] += node.delta * self.current_layer.get_previous_layer().nodes[
-                            u].get_value()
+                            u].get_value()  # for batch change in training function
                     f += 1
-            self.current_layer = self.current_layer.get_previous_layer()
+            self.current_layer = self.current_layer.get_previous_layer()  # goes to previous layer
         return
 
     def training(self, encoder, input):
-        # TODO: not sure if needed for back prop... not mentioned in assignment
-        # for inputs in batch:
         j = 0
-        for node in encoder.input_layer.nodes:
+        for node in encoder.input_layer.nodes:  # resetting the input nodes
             node.set_value(input[j])
             j += 1
-        #     temp = encoder.current_layer
-        encoder.feed_forward_process()
-        encoder.back_propagation_process()
-        # self.current_layer = temp.get_next_layer()
-        encoder.current_layer = encoder.output_layer
-        while encoder.current_layer.get_previous_layer() != None:
-            for node in encoder.current_layer.nodes:
-                node.previous_bias_change = -self.eta * node.bias_change + self.alpha * node.previous_bias_change
-                node.bias += node.previous_bias_change
-                node.bias_change = 0
+        encoder.feed_forward_process()  # updating values
+        encoder.back_propagation_process()  # determining changes
+        encoder.current_layer = encoder.output_layer  # setting to end layer
+        while encoder.current_layer.get_previous_layer() != None:  # goes through all the layers
+            for node in encoder.current_layer.nodes:  # goes through each node in layer
+                node.previous_bias_change = -self.eta * node.bias_change + self.alpha * node.previous_bias_change  # adding momentum and reducing step
+                node.bias += node.previous_bias_change  # moving bias
+                node.bias_change = 0  # resetting for batch
                 i = 0
-                for weight in node.weight_vector:
+                for weight in node.weight_vector:  # going through incoming weights
                     node.previous_weight_change[i] = -self.eta * node.weight_change_vector[i] + self.alpha * \
-                                                     node.previous_weight_change[i]
-                    weight += node.previous_weight_change[i]
-                    node.weight_change_vector[i] = 0
+                                                     node.previous_weight_change[
+                                                         i]  # adding momenturm and reducing step
+                    weight += node.previous_weight_change[i]  # moving weight
+                    node.weight_change_vector[i] = 0  # resetting for batch
                     i += 1
-            encoder.current_layer = encoder.current_layer.get_previous_layer()
+            encoder.current_layer = encoder.current_layer.get_previous_layer()  # going to next layer
         return
 
     def feed_forward_process(self):
@@ -257,6 +268,10 @@ class AutoEncoder:
             self.current_layer = self.current_layer.get_next_layer()
 
     def print_layer_neuron_data(self):
+        """
+        prints the neuron data and the encoders data
+        :return:
+        """
         self.current_layer = self.input_layer
         while True:
             self.current_layer.print_layer_data()
@@ -269,12 +284,17 @@ class AutoEncoder:
                 self.current_layer = self.current_layer.get_next_layer()
 
     def print_output(self):
-        values1 = []
+        """
+        prints the output and the input from testing. Also returns the actual and predicted values
+        :return:
+        """
         values2 = []
+        values1 = []
         for node1, node2 in zip(self.output_layer.nodes, self.input_layer.nodes):
             values1.append(node1.get_value())
             values2.append(node2.get_value())
-        print("Output: ", values1, "\nInput: ", values2)
+        # print("Output: ", values1, "\nInput: ", values2)
+        return values2, values1
 
 
 class Layer:
@@ -374,6 +394,10 @@ class Layer:
         self._previous_layer = prev_layer
 
     def print_layer_data(self):
+        """
+        prints the layer data within an encoder
+        :return:
+        """
         if self.is_input_layer:
             string = "_________________________________________________________________"
             center = "Input Layer"

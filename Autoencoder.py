@@ -10,25 +10,10 @@ Instructor: John Shepherd
 
 File: contains classes and functions that are used primarily for the purpose of creating an AutoEncoder
 """
-# TODO: See TODO comments below to find out what you can do...
-# TODO: HAVE NOT DONE TESTING!!! Feel free to add testing
+
 import random
 import math
 import numpy as np
-
-# TODO: ALEX Remove when read...
-""" 
-________________________________________________________________________________________________________________________
-READ THIS
-------------------------------------------------------------------------------------------------------------------------
-An auto encoder is a neural network! 
-- neural_net.fit(X, Y)  where X is the vector of data and Y is the labels
-
-*** The difference from a neural network and auto encoder is the following ***
-- The labels are the input vector
-- neural_net.fit(X, X)  where X is the vector of data and X is the labels
-------------------------------------------------------------------------------------------------------------------------
-"""
 
 
 class AutoEncoder:
@@ -45,54 +30,106 @@ class AutoEncoder:
 
     This class contains functions to structure, fit, and  predict auto encoders.
     """
+    static_output_layer = None
 
-    def __init__(self, data_instance, num_layers, is_stacked, num_hidden_layers):
+    def __init__(self, num_layers, is_stacked, num_hidden_layers, io_size, eta, alpha):
         """
         Initializes an AutoEncoder object.
-        :param data_instance: the data object of the data to train and test upon
-        :param num_layers: arbitrarily set the number of hidden layers
-        :param is_stacked: boolean to determine if the encoder is should feeding another encoder
-        :param num_hidden_layers: list ; number of  hidden layer
+        :param num_layers: int ; arbitrarily set the number of hidden layers
+        :param is_stacked: boolean ; to determine if the encoder is feeding another encoder
+        :param num_hidden_layers: list ; number of  hidden layer nodes
+        :param io_size: int ; input and output layer node size
         """
-        self.data_obj = data_instance
-        self.df = self.data_obj.df  # data frame of preprocessed data
-        self.input_size = self.df.shape[1]
-        self.output_size = self.input_size
-        self.num_layers = num_layers
-        self.hidden_node_sizes = num_hidden_layers
-        self.is_stacked = is_stacked
-
+        self.is_stacked = is_stacked  # controls whether two or more encoders involved
+        self.input_size = io_size
+        self.output_size = io_size
+        self.hidden_node_sizes = num_hidden_layers  # vector of hidden layer node size
+        self.num_hidden_layers = num_layers
         self.input_layer = None
         self.current_layer = None
-        self.output_layer = None  # TODO: May not need
+        self.output_layer = None
+        self.eta = eta
+        self.alpha = alpha
 
-        self.initialize_auto_encoder()
-
-    def initialize_auto_encoder(self):
+    def initialize_auto_encoder(self, data_obj):
         """
         Create the structure of the neural network
         :return: None
         """
+        df = data_obj.train_df
         first_iter = True  # create structure first iteration
         batch_size = 10  # number of example per batch  # TODO: use stochastic gradient descent... idk where batch size matters.
-        for row in self.df.iterrows():  # iterate through each example
+        j = 0
+        batch = []
+        for row in df.iterrows():  # iterate through each example
             if first_iter:  # first iteration sets up structure
                 self.input_layer = Layer(self.input_size, True, False, row, None)  # create hidden layer
                 self.current_layer = self.input_layer
-                self.create_hidden_layer(self.num_layers, self.hidden_node_sizes)  # create layers in hidden layer
-
+                self.create_hidden_layer(self.num_hidden_layers,
+                                         self.hidden_node_sizes)  # create layers in hidden layer
                 self.output_layer = Layer(self.output_size, False, True, None, self.current_layer)
                 self.current_layer.set_next_layer(self.output_layer)  # connect last hidden to output
-
                 first_iter = False  # does not let a new structure to overwrite existing
-
             """
             training_process: feed forward, cost_process, back propagation (includes updating by using gradient descent)
             """
+            j += 1
+            if j % batch_size == 0:
+                self.gradient_descent(batch)
+                batch = []
+            batch.append(row)
             self.feed_forward_process()  # creates sigmoid values for every node
             # self.predict()  # TODO: finish function
             # self.cost_process()  # TODO: finish function
             # self.back_propagation_process()  # updates the weights, bias, and node values using gradient descent. # TODO finish function
+
+    def initialize_stacked_auto_encoder(self, data_obj):  # , #num_layers, num_hidden_layer):
+        """
+        Initializes another auto encoder such that the current auto encoder is
+        :param data_obj:
+        :return:
+        """
+        df = data_obj.train_df
+        first_iter = True  # create structure first iteration
+        batch_size = 10  # number of example per batch
+        j = 1
+        batch = []
+        num_of_iterations = 1
+        for row in df.iterrows():  # iterate through each example
+            if first_iter:  # first iteration sets up structure
+                self.input_layer = Layer(self.input_size, True, False, row, None)  # create hidden layer
+                print("Create Input Layer")
+                self.current_layer = self.input_layer
+                inner_encoder = AutoEncoder(self.num_hidden_layers, True, [3],
+                                            self.hidden_node_sizes[0], 0.2, 0.45)  # int, bool, list, int
+                print("Create AutoEncoder as Hidden Layer")
+                inner_encoder.input_layer = Layer(inner_encoder.input_size, True, False, None, self.input_layer)
+                print("Create Inner AutoEncoder's Input Layer")
+                inner_encoder.current_layer = inner_encoder.input_layer
+                self.current_layer.set_next_layer(inner_encoder.current_layer)
+                inner_encoder.create_hidden_layer(inner_encoder.num_hidden_layers, inner_encoder.hidden_node_sizes)
+                print("Create AutoEncoder's Hidden Layer; next line shows hidden layer creation")
+                inner_encoder.output_layer = Layer(inner_encoder.output_size, False, True, None,
+                                                   inner_encoder.current_layer)
+                print("Create AutoEncoder's Output Layer")
+                inner_encoder.current_layer.set_next_layer(inner_encoder.output_layer)
+                self.current_layer = inner_encoder.output_layer
+                self.output_layer = Layer(self.output_size, False, True, None, self.current_layer)
+                print("Create Output Layer")
+                self.static_output_layer = self.output_layer
+                self.current_layer.set_next_layer(self.output_layer)  # connect last hidden to output
+                first_iter = False
+
+            j += 1
+            if j % batch_size == 0:
+                self.gradient_descent(batch)
+                batch = []
+            batch.append(row)
+            self.feed_forward_process()  # creates sigmoid values for every node
+            self.feed_forward_process()
+            self.back_propagation_process()
+            num_of_iterations += 1
+        print("Number of iterations = %s" % num_of_iterations)
 
     def create_hidden_layer(self, num_layers, num_nodes):
         """
@@ -101,28 +138,46 @@ class AutoEncoder:
         :param num_nodes: list; number of nodes in hidden layer
         :return: None
         """
-        # TODO: number of nodes will decrease by 1 until size 1, then expand back out...
-        for i in range(num_layers):  # create the user-defined number of layers
-            new_layer = Layer(num_nodes[i], False, False, None, self.current_layer)
-            self.current_layer.set_next_layer(new_layer)  # link from current to next layer
+        if len(num_nodes) is 1:
+            print("Create Hidden Layer")
+            new_layer = Layer(num_nodes[0], False, False, None, self.current_layer)
+            self.current_layer.set_next_layer(new_layer)
             temp = self.current_layer
             self.current_layer = temp.get_next_layer()
+        else:
+            for i in range(num_layers):  # create the user-defined number of layers
+                print("Create Hidden Layer")
+                new_layer = Layer(num_nodes[i], False, False, None, self.current_layer)
+                self.current_layer.set_next_layer(new_layer)  # link from current to next layer
+                temp = self.current_layer
+                self.current_layer = temp.get_next_layer()
 
-    # def vectorize(self):
-    #     pass
-    #
-    # def networkize(self):
-    #     pass
-
-
-    def sigmoid_activation_process(self, current):
+    def activation_function_process(self, current):
         """
         Given the current layer (can be input), get the next layer. For each node in next layer, calculate the Wa+b
-        :param current_layer:
+        :param current:
         :return: None
         """
         current_layer = current
         next_layer = current_layer.get_next_layer()  # next layer to calculate Z and sigmoid for.
+        if next_layer is self.static_output_layer:
+            self.linear_activation(current, next_layer)
+        else:
+            print("Sigmoid")
+            for target_node in next_layer.nodes:  # for each node in the next layer, calculate activation function
+                sum_value = 0
+                for node, weight in zip(current_layer.nodes,
+                                        target_node.weight_vector):  # iterate through current layer nodes in parallel to the weights of the target node (target node has previous layer size weights).
+                    sum_value += node.get_value() * weight  # multiply weights and value
+                sum_value += target_node.bias  # add in bias last
+                target_node.z_value = sum_value  # value to sigmoid
+                target_node.sigmoid_function()  # creates the a range between [0, 1] from the value z.
+            current = current_layer
+
+    @staticmethod
+    def linear_activation(current, next_layer):
+        print("Linear_activation")
+        current_layer = current
         for target_node in next_layer.nodes:  # for each node in the next layer, calculate activation function
             sum_value = 0
             for node, weight in zip(current_layer.nodes,
@@ -130,8 +185,6 @@ class AutoEncoder:
                 sum_value += node.get_value() * weight  # multiply weights and value
             sum_value += target_node.bias  # add in bias last
             target_node.z_value = sum_value  # value to sigmoid
-            target_node.sigmoid_function()  # creates the a range between [0, 1] from the value z.
-        current = current_layer
 
     def predict(self):
         # TODO: compare the output layer's values to the input layers (since actual is the input values).
@@ -149,24 +202,69 @@ class AutoEncoder:
         for node in self.output_layer.nodes:
             pass
 
-    # def set_output(self):
-    #     pass
-
     def back_propagation_process(self):
-        pass
+        print("backprop")
+        while self.current_layer.get_previous_layer() != None:
+            if self.current_layer is self.static_output_layer:
+                j = 0
+                for node in self.current_layer.nodes:
+                    node.delta = -(self.input_layer.nodes[0].get_value() - node.get_value())  # TODO: fix nodes.value
+                    node.bias_change += node.delta
+                    j += 1
+                    i = 0
+                    for weight in node.weight_vector:
+                        node.weight_change_vector[i] = node.delta * weight
+            else:
+                f = 0
+                for node in self.current_layer.nodes:
+                    summer = 0
+                    for noder in self.current_layer.get_next_layer().nodes:
+                        summer += noder.delta * noder.weight_vector[f]
+                    node.delta = node.get_value() * (1 - node.get_value()) * summer
+                    node.bias_change += node.delta
+                    u = 0
+                    for weight in node.weight_vector:  # TODO: not using weight
+                        node.weight_change_vector[u] += node.delta * self.current_layer.get_previous_layer().nodes[
+                            u].get_value()
+                    f += 1
+            self.current_layer = self.current_layer.get_previous_layer()
+        return
 
-    def gradient_descent(self):
+    def gradient_descent(self, batch):
         # TODO: not sure if needed for back prop... not mentioned in assignment
-        pass
+        for input in batch:
+            j = 0
+            for node in self.input_layer.nodes:
+                node.value = input[j]
+                j += 1
+            self.feed_forward_process()
+            self.back_propagation_process()
+        self.current_layer = self.output_layer
+        while self.current_layer.get_previous_layer() != None:
+            for node in self.current_layer.nodes:
+                node.previous_bias_change = -self.eta * node.bias_change / len(
+                    batch) + self.alpha * node.previous_bias_change
+                node.bias += node.previous_bias_change
+                node.bias_change = 0
+                i = 0
+                for weight in node.weight_vector:
+                    node.previous_weight_change[i] = -self.eta * node.weight_change_vector[i] / len(
+                        batch) + self.alpha * node.previous_weight_change[i]
+                    weight += node.previous_weight_change[i]
+                    node.weight_change_vector[i] = 0
+                    i += 1
+            self.current_layer = self.current_layer.get_previous_layer()
+        return
 
     def feed_forward_process(self):
         """
         Goes through network nodes and finds the sigmoid value for each node.
         :return: None
         """
+        print("Feed Forward Start")
         self.current_layer = self.input_layer
         while self.current_layer is not self.output_layer:  # once it is the output layer, no sigmoid value to compute
-            self.sigmoid_activation_process(self.current_layer)  # performs sigmoid functions for layer
+            self.activation_function_process(self.current_layer)  # performs sigmoid functions for layer
             self.current_layer = self.current_layer.get_next_layer()
 
     def print_layer_neuron_data(self):
@@ -174,15 +272,11 @@ class AutoEncoder:
         while True:
             self.current_layer.print_layer_data()
             for node in self.current_layer.nodes:
-                node.print_neuron_data()
                 pass
             if self.current_layer is self.output_layer:
                 break
             else:
                 self.current_layer = self.current_layer.get_next_layer()
-
-
-# TODO: determine if class NetworkClient is needed... See program 4
 
 
 class Layer:
@@ -200,18 +294,10 @@ class Layer:
         """
         self.is_input_layer = is_input_layer
         self.is_output_layer = is_output_layer
-
         self.no_of_nodes = num_nodes
-
         self.nodes = []
-
-        # TODO: determine if needed. Should consider iff we can do matrix multiplications...
-        # self.weight_matrix = None  # a row is all the nodes in previous layer connected to a node in this layer
-        # self.bias_vector = []  # contains the bias values with respect to the nodes
-
         self._previous_layer = prev
         self._next_layer = None
-
         self._initialize_layer(input)  # creates the layer
 
     def _initialize_hidden_nodes(self, weight_matrix, bias_vector):
@@ -224,7 +310,7 @@ class Layer:
         input = [0] * self.no_of_nodes  # input is 0 for non input layer nodes; sigmoid not calculated
         nodes = []  # list to hold nodes
         for neuron in range(self.no_of_nodes):
-            n = Neuron(input[neuron], bias_vector[neuron], [])
+            n = Neuron(input[neuron], bias_vector[neuron], [], len(self._previous_layer.nodes))
             for w in weight_matrix:
                 n.weight_vector.append(w[neuron])
             nodes.append(n)
@@ -252,9 +338,9 @@ class Layer:
         initializes the layer using the other initializing functions.
         :return: None
         """
-        if self.is_input_layer:  # initialize input layer
+        if self.get_previous_layer() is None:  # initialize input layer
             for i in input[1]:
-                self.nodes.append(Neuron(i, None, None))
+                self.nodes.append(Neuron(i, None, None, 0))
         else:  # initialize hidden_layer and output
             weight_matrix, bias_vector = self._initialize_weights()
             self.nodes = self._initialize_hidden_nodes(weight_matrix, bias_vector)
@@ -325,7 +411,7 @@ class Neuron:
     creates the neurons within a layer.
     """
 
-    def __init__(self, value, bias, weight_vector):
+    def __init__(self, value, bias, weight_vector, prev_node_nums):
         """
         Initialize a neuron in a layer
         :param value: the value it currently contains
@@ -337,6 +423,10 @@ class Neuron:
         self.weight_vector = weight_vector
         self.delta = 0
         self.z_value = 0
+        self.weight_change_vector = [0] * prev_node_nums
+        self.previous_weight_change = []
+        self.bias_change = 0
+        self.previous_bias_change = 0
 
     def adjust_bias(self, amount):
         """
@@ -385,20 +475,3 @@ class Neuron:
             print("\t weight_vector = ", list(self.weight_vector), "\n")
         else:
             print("\t weight_vector = ", None, "\n")
-
-# TODO: not being used, at least not yet... using vectors and matrices currently...
-# class Weight:
-#     """
-#     creates the weights associated to a neuron within a layer
-#     """
-#     def __init__(self, L_neuron, R_neuron):
-#         self.L_neuron = L_neuron
-#         self.R_neuron = R_neuron
-#         self.weight = float(random.randint(-1, 1)) / 100
-#         self.weight_change = 0
-#         self.prev_change = 0
-#         self.momentum_cof = .5
-#         self.eta = .1
-#
-#     def set_weight(self, weight):
-#         self.weight = weight

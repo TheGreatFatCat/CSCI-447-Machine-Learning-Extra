@@ -179,6 +179,7 @@ class AutoEncoder:
             sum_value += target_node.bias  # add in bias last
             target_node.set_value(sum_value)  # value to sigmoid
             l.append(sum_value)
+        print(l)
 
     def test(self, test_data):
         print("Testing")

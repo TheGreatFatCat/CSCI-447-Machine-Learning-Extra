@@ -1,0 +1,24 @@
+Justin Keeling
+- Auto Encoder Implementation
+- Implemented Stacked Auto Encoder
+- Mean Squared Error
+- Feed Forward
+- Back propagating Debugging
+- Print Statements for video
+- Neuron Class
+- Layer Class
+- Main File 
+- Sigmoid and Linear Activation Functions
+- Testing
+- Normalized Data
+
+John Lambrecht
+- Tuning
+- Transer of back propagation from P4 Neural Network
+- Added instance variables for back propagation
+
+Alex Harry:
+- Paper
+- Graphs
+
+Andrew Smith:

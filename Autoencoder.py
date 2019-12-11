@@ -93,38 +93,38 @@ class AutoEncoder:
         """
         df = data_obj.train_df
         first_iter = True  # create structure first iteration
-        num_of_iterations = 1
-        for row in df.iterrows():  # iterate through each example
-            if first_iter:  # first iteration sets up structure
-                self.input_layer = Layer(self.input_size, True, False, row, None)  # create hidden layer
-                print("Create Input Layer")
-                self.current_layer = self.input_layer
-                self.inner_encoder = AutoEncoder(self.num_hidden_layers, True, [3],
-                                                 self.hidden_node_sizes[0], 0.2, 0.45)  # int, bool, list, int
-                print("Create AutoEncoder as Hidden Layer")
-                self.inner_encoder.input_layer = Layer(self.inner_encoder.input_size, True, False, None,
-                                                       self.input_layer)
-                print("Create Inner AutoEncoder's Input Layer")
-                self.inner_encoder.current_layer = self.inner_encoder.input_layer
-                self.current_layer.set_next_layer(self.inner_encoder.current_layer)
-                self.inner_encoder.create_hidden_layer(self.inner_encoder.num_hidden_layers,
-                                                       self.inner_encoder.hidden_node_sizes)
-                print("Create AutoEncoder's Hidden Layer; next line shows hidden layer creation")
-                self.inner_encoder.output_layer = Layer(self.inner_encoder.output_size, False, True, None,
-                                                        self.inner_encoder.current_layer)
-                print("Create AutoEncoder's Output Layer")
-                self.inner_encoder.current_layer.set_next_layer(self.inner_encoder.output_layer)
-                self.current_layer = self.inner_encoder.output_layer
-                self.output_layer = Layer(self.output_size, False, True, None, self.current_layer)
-                print("Create Output Layer")
-                self.current_layer.set_next_layer(self.output_layer)  # connect last hidden to output
-                first_iter = False
-            self.training(self, row[1])
-            inp_v = []
-            for node in self.input_layer.get_next_layer().nodes:
-                inp_v.append(node.get_value())
-            self.training(self.inner_encoder, inp_v)
-        print("Number of iterations = %s" % num_of_iterations)
+        num_of_iterations = 100
+        while num_of_iterations <= 100:
+            for row in df.iterrows():  # iterate through each example
+                if first_iter:  # first iteration sets up structure
+                    self.input_layer = Layer(self.input_size, True, False, row, None)  # create hidden layer
+                    print("Create Input Layer")
+                    self.current_layer = self.input_layer
+                    self.inner_encoder = AutoEncoder(self.num_hidden_layers, True, [3],
+                                                     self.hidden_node_sizes[0], 0.2, 0.45)  # int, bool, list, int
+                    print("Create AutoEncoder as Hidden Layer")
+                    self.inner_encoder.input_layer = Layer(self.inner_encoder.input_size, True, False, None,
+                                                           self.input_layer)
+                    print("Create Inner AutoEncoder's Input Layer")
+                    self.inner_encoder.current_layer = self.inner_encoder.input_layer
+                    self.current_layer.set_next_layer(self.inner_encoder.current_layer)
+                    self.inner_encoder.create_hidden_layer(self.inner_encoder.num_hidden_layers,
+                                                           self.inner_encoder.hidden_node_sizes)
+                    print("Create AutoEncoder's Hidden Layer; next line shows hidden layer creation")
+                    self.inner_encoder.output_layer = Layer(self.inner_encoder.output_size, False, True, None,
+                                                            self.inner_encoder.current_layer)
+                    print("Create AutoEncoder's Output Layer")
+                    self.inner_encoder.current_layer.set_next_layer(self.inner_encoder.output_layer)
+                    self.current_layer = self.inner_encoder.output_layer
+                    self.output_layer = Layer(self.output_size, False, True, None, self.current_layer)
+                    print("Create Output Layer")
+                    self.current_layer.set_next_layer(self.output_layer)  # connect last hidden to output
+                    first_iter = False
+                self.training(self, row[1])
+                inp_v = []
+                for node in self.input_layer.get_next_layer().nodes:
+                    inp_v.append(node.get_value())
+                self.training(self.inner_encoder, inp_v)
 
     def create_hidden_layer(self, num_layers, num_nodes):
         """

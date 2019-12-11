@@ -50,8 +50,9 @@ class AutoEncoder:
         self.output_layer = None
         self.eta = eta
         self.alpha = alpha
+        self.inner_encoder = None
 
-    def initialize_auto_encoder(self, data_obj):
+    def fit_auto_encoder(self, data_obj):
         """
         Create the structure of the neural network
         :return: None
@@ -83,7 +84,7 @@ class AutoEncoder:
             # self.cost_process()  # TODO: finish function
             # self.back_propagation_process()  # updates the weights, bias, and node values using gradient descent. # TODO finish function
 
-    def initialize_stacked_auto_encoder(self, data_obj):  # , #num_layers, num_hidden_layer):
+    def fit_stacked_auto_encoder(self, data_obj):  # , #num_layers, num_hidden_layer):
         """
         Initializes another auto encoder such that the current auto encoder is
         :param data_obj:
@@ -92,7 +93,7 @@ class AutoEncoder:
         df = data_obj.train_df
         first_iter = True  # create structure first iteration
         batch_size = 10  # number of example per batch
-        j = 1
+        j = 0
         batch = []
         num_of_iterations = 1
         for row in df.iterrows():  # iterate through each example
@@ -100,34 +101,31 @@ class AutoEncoder:
                 self.input_layer = Layer(self.input_size, True, False, row, None)  # create hidden layer
                 print("Create Input Layer")
                 self.current_layer = self.input_layer
-                inner_encoder = AutoEncoder(self.num_hidden_layers, True, [3],
+                self.inner_encoder = AutoEncoder(self.num_hidden_layers, True, [3],
                                             self.hidden_node_sizes[0], 0.2, 0.45)  # int, bool, list, int
                 print("Create AutoEncoder as Hidden Layer")
-                inner_encoder.input_layer = Layer(inner_encoder.input_size, True, False, None, self.input_layer)
+                self.inner_encoder.input_layer = Layer(self.inner_encoder.input_size, True, False, None, self.input_layer)
                 print("Create Inner AutoEncoder's Input Layer")
-                inner_encoder.current_layer = inner_encoder.input_layer
-                self.current_layer.set_next_layer(inner_encoder.current_layer)
-                inner_encoder.create_hidden_layer(inner_encoder.num_hidden_layers, inner_encoder.hidden_node_sizes)
+                self.inner_encoder.current_layer = self.inner_encoder.input_layer
+                self.current_layer.set_next_layer(self.inner_encoder.current_layer)
+                self.inner_encoder.create_hidden_layer(self.inner_encoder.num_hidden_layers, self.inner_encoder.hidden_node_sizes)
                 print("Create AutoEncoder's Hidden Layer; next line shows hidden layer creation")
-                inner_encoder.output_layer = Layer(inner_encoder.output_size, False, True, None,
-                                                   inner_encoder.current_layer)
+                self.inner_encoder.output_layer = Layer(self.inner_encoder.output_size, False, True, None,
+                                                   self.inner_encoder.current_layer)
                 print("Create AutoEncoder's Output Layer")
-                inner_encoder.current_layer.set_next_layer(inner_encoder.output_layer)
-                self.current_layer = inner_encoder.output_layer
+                self.inner_encoder.current_layer.set_next_layer(self.inner_encoder.output_layer)
+                self.current_layer = self.inner_encoder.output_layer
                 self.output_layer = Layer(self.output_size, False, True, None, self.current_layer)
                 print("Create Output Layer")
-                self.static_output_layer = self.output_layer
                 self.current_layer.set_next_layer(self.output_layer)  # connect last hidden to output
                 first_iter = False
-
             j += 1
             if j % batch_size == 0:
                 self.gradient_descent(batch)
                 batch = []
             batch.append(row)
-            self.feed_forward_process()  # creates sigmoid values for every node
-            self.feed_forward_process()
-            self.back_propagation_process()
+            # self.feed_forward_process()  # creates sigmoid values for every node
+            # self.back_propagation_process()
             num_of_iterations += 1
         print("Number of iterations = %s" % num_of_iterations)
 
@@ -152,7 +150,7 @@ class AutoEncoder:
                 temp = self.current_layer
                 self.current_layer = temp.get_next_layer()
 
-    def activation_function_process(self, current):
+    def activation_function_process(self, current, output):
         """
         Given the current layer (can be input), get the next layer. For each node in next layer, calculate the Wa+b
         :param current:
@@ -160,7 +158,7 @@ class AutoEncoder:
         """
         current_layer = current
         next_layer = current_layer.get_next_layer()  # next layer to calculate Z and sigmoid for.
-        if next_layer is self.static_output_layer:
+        if next_layer is output:
             self.linear_activation(current, next_layer)
         else:
             print("Sigmoid")
@@ -174,9 +172,8 @@ class AutoEncoder:
                 target_node.sigmoid_function()  # creates the a range between [0, 1] from the value z.
             current = current_layer
 
-    @staticmethod
-    def linear_activation(current, next_layer):
-        print("Linear_activation")
+    def linear_activation(self, current, next_layer):
+        l = []
         current_layer = current
         for target_node in next_layer.nodes:  # for each node in the next layer, calculate activation function
             sum_value = 0
@@ -184,12 +181,20 @@ class AutoEncoder:
                                     target_node.weight_vector):  # iterate through current layer nodes in parallel to the weights of the target node (target node has previous layer size weights).
                 sum_value += node.get_value() * weight  # multiply weights and value
             sum_value += target_node.bias  # add in bias last
-            target_node.z_value = sum_value  # value to sigmoid
+            target_node.set_value(sum_value)  # value to sigmoid
+            l.append(sum_value)
+        print("Linear Activation: ", l)
 
-    def predict(self):
-        # TODO: compare the output layer's values to the input layers (since actual is the input values).
-        # TODO: Traditional Neural net: actual values are all 0 but one is 1. Since we are trying to predict the input layer, we cannot do that.
-        pass
+    def test(self, test_data):
+        print("Testing")
+        for row in test_data.iterrows():
+            self.current_layer = self.input_layer
+            for node, new_input in zip(self.input_layer.nodes, row[1]):
+                print("node : ", node)
+                print("new_input : ", new_input)
+                node.set_value(new_input)
+            self.feed_forward_process()
+            self.print_output()
 
     def cost_process(self):
         """
@@ -205,10 +210,10 @@ class AutoEncoder:
     def back_propagation_process(self):
         print("backprop")
         while self.current_layer.get_previous_layer() != None:
-            if self.current_layer is self.static_output_layer:
+            if self.current_layer is self.output_layer:
                 j = 0
                 for node in self.current_layer.nodes:
-                    node.delta = -(self.input_layer.nodes[0].get_value() - node.get_value())  # TODO: fix nodes.value
+                    node.delta = -(self.input_layer.nodes[0].get_value() - node.get_value())
                     node.bias_change += node.delta
                     j += 1
                     i = 0
@@ -232,13 +237,16 @@ class AutoEncoder:
 
     def gradient_descent(self, batch):
         # TODO: not sure if needed for back prop... not mentioned in assignment
-        for input in batch:
+        for inputs in batch:
+            inpt = inputs[1]
             j = 0
             for node in self.input_layer.nodes:
-                node.value = input[j]
+                node.set_value(inpt[j])
                 j += 1
+            temp = self.current_layer
             self.feed_forward_process()
             self.back_propagation_process()
+            # self.current_layer = temp.get_next_layer()
         self.current_layer = self.output_layer
         while self.current_layer.get_previous_layer() != None:
             for node in self.current_layer.nodes:
@@ -264,7 +272,8 @@ class AutoEncoder:
         print("Feed Forward Start")
         self.current_layer = self.input_layer
         while self.current_layer is not self.output_layer:  # once it is the output layer, no sigmoid value to compute
-            self.activation_function_process(self.current_layer)  # performs sigmoid functions for layer
+            self.activation_function_process(self.current_layer,
+                                             self.output_layer)  # performs sigmoid functions for layer
             self.current_layer = self.current_layer.get_next_layer()
 
     def print_layer_neuron_data(self):
@@ -272,11 +281,21 @@ class AutoEncoder:
         while True:
             self.current_layer.print_layer_data()
             for node in self.current_layer.nodes:
+                node.print_neuron_data()
                 pass
             if self.current_layer is self.output_layer:
                 break
             else:
                 self.current_layer = self.current_layer.get_next_layer()
+
+    def print_output(self):
+        values1 = []
+        values2 = []
+        for node1,node2 in zip(self.output_layer.nodes,self.input_layer.nodes):
+            print("Weight Vector : ", node1.weight_vector)
+            values1.append(node1.get_value())
+            values2.append(node2.get_value())
+        print("Output: ", values1, "\nInput: ", values2)
 
 
 class Layer:
@@ -424,7 +443,7 @@ class Neuron:
         self.delta = 0
         self.z_value = 0
         self.weight_change_vector = [0] * prev_node_nums
-        self.previous_weight_change = []
+        self.previous_weight_change = [0] * prev_node_nums
         self.bias_change = 0
         self.previous_bias_change = 0
 
@@ -459,6 +478,9 @@ class Neuron:
         :return: value ; type float
         """
         return self._value
+
+    def set_value(self, val):
+        self._value = val
 
     def sigmoid_function(self):
         """

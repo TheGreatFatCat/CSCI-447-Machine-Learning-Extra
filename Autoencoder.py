@@ -93,7 +93,7 @@ class AutoEncoder:
         """
         df = data_obj.train_df
         first_iter = True  # create structure first iteration
-        num_of_iterations = 100
+        num_of_iterations = 50
         while num_of_iterations <= 100:
             for row in df.iterrows():  # iterate through each example
                 if first_iter:  # first iteration sets up structure
@@ -125,6 +125,7 @@ class AutoEncoder:
                 for node in self.input_layer.get_next_layer().nodes:
                     inp_v.append(node.get_value())
                 self.training(self.inner_encoder, inp_v)
+                num_of_iterations += 1
 
     def create_hidden_layer(self, num_layers, num_nodes):
         """

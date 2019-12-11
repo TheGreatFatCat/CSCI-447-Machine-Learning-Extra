@@ -248,7 +248,6 @@ class AutoEncoder:
         Goes through network nodes and finds the sigmoid value for each node.
         :return: None
         """
-        print("Feed Forward Start")
         self.current_layer = self.input_layer
         while self.current_layer is not self.output_layer:  # once it is the output layer, no sigmoid value to compute
             self.activation_function_process(self.current_layer,

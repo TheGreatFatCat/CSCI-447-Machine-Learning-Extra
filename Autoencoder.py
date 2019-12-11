@@ -58,7 +58,7 @@ class AutoEncoder:
         Create the structure of the neural network
         :return: None
         """
-        df = data_obj.train_df
+        df = data_obj
         first_iter = True  # create structure first iteration
         j = 0
         n = 0
@@ -77,17 +77,16 @@ class AutoEncoder:
                 self.training(self, row[1])
             num_of_iterations +=1
 
-    def fit_stacked_auto_encoder(self, data_obj):  # , #num_layers, num_hidden_layer):
+    def fit_stacked_auto_encoder(self, df):  # , #num_layers, num_hidden_layer):
         """
         Initializes another auto encoder such that the current auto encoder is
         :param data_obj:
         :return:
         """
-        df = data_obj.train_df
         first_iter = True  # create structure first iteration
         num_of_iterations = 0
         n = 0
-        while num_of_iterations <= 50:
+        while num_of_iterations <= 100:
             for row in df.iterrows():  # iterate through each example
                 if first_iter:  # first iteration sets up structure
                     self.input_layer = Layer(self.input_size, True, False, row, None)  # create hidden layer
@@ -404,28 +403,30 @@ class Layer:
             print(string)
             print(center)
             print(string)
-            print("Next Layer Nodes = %s" % self.get_next_layer().nodes)
+            # print("Next Layer Nodes = %s" % self.get_next_layer().nodes)
         if self.is_output_layer:
             string = "_________________________________________________________________"
             center = "Output Layer"
             print(string)
             print(center)
             print(string)
-            print("Previous Layer Node= %s" % self.get_previous_layer().nodes)
+            # print("Previous Layer Node= %s" % self.get_previous_layer().nodes)
         if self.is_output_layer == False and self.is_input_layer == False:
             string = "_________________________________________________________________"
             center = "Hidden Layer"
             print(string)
             print(center)
             print(string)
-            print("Next Layer Nodes = %s" % self.get_next_layer().nodes)
+            # print("Next Layer Nodes = %s" % self.get_next_layer().nodes)
             if not self.get_previous_layer().is_input_layer:
-                print("Previous Layer Node= %s" % self.get_previous_layer().nodes)
+                pass
+                # print("Previous Layer Node= %s" % self.get_previous_layer().nodes)
             else:
-                print("Previous Layer Node= Input Layer")
+                pass
+                # print("Previous Layer Node= Input Layer")
 
         print("Number of Nodes = %s" % self.no_of_nodes)
-        print("Nodes = %s" % self.nodes)
+        # print("Nodes = %s" % self.nodes)
 
 
 class Neuron:

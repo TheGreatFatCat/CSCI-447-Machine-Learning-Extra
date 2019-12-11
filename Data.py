@@ -88,7 +88,7 @@ class Data:
         column_size = self.get_col_size(df)  # get column size
         group = int(column_size / k_val)  # get number of data points per group
         grouped_data_frames = []
-        for g, k_df in df.groupby(np.arange(len(column_size)) // group):
+        for g, k_df in df.groupby(np.arange(column_size) // group):
             grouped_data_frames.append(k_df)
         return grouped_data_frames
 

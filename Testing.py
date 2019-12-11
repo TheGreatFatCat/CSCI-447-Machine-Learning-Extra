@@ -40,7 +40,7 @@ class MyTestCase(unittest.TestCase):
         data.df = (data.df - data.df.mean()) / (data.df.max() - data.df.min())
         data.split_data(data_frame=data.df)  # sets test and train data
         auto = AutoEncoder(3, False, [7, 5, 7], data.train_df.shape[1], 0.03, 0.45)
-        auto.fit_stacked_auto_encoder(data)
+        auto.fit_stacked_auto_encoder(data.train_df)
         auto.print_layer_neuron_data()
         auto.test(data.test_df)
 

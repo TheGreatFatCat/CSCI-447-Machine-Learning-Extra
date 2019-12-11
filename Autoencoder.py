@@ -93,9 +93,6 @@ class AutoEncoder:
         """
         df = data_obj.train_df
         first_iter = True  # create structure first iteration
-        batch_size = 10  # number of example per batch
-        j = 0
-        batch = []
         num_of_iterations = 1
         for row in df.iterrows():  # iterate through each example
             if first_iter:  # first iteration sets up structure
@@ -122,14 +119,11 @@ class AutoEncoder:
                 print("Create Output Layer")
                 self.current_layer.set_next_layer(self.output_layer)  # connect last hidden to output
                 first_iter = False
-            j += 1
-            if j % batch_size == 0:
-                self.training(self, batch)
-                batch = []
-            batch.append(row)
-            # self.feed_forward_process()  # creates sigmoid values for every node
-            # self.back_propagation_process()
-            num_of_iterations += 1
+            self.training(self, row[1])
+            inp_v = []
+            for node in self.input_layer.get_next_layer().nodes:
+                inp_v.append(node.get_value())
+            self.training(self.inner_encoder, inp_v)
         print("Number of iterations = %s" % num_of_iterations)
 
     def create_hidden_layer(self, num_layers, num_nodes):
@@ -201,6 +195,7 @@ class AutoEncoder:
 
     def back_propagation_process(self):
         print("backprop")
+
         while self.current_layer.get_previous_layer() != None:
             if self.current_layer is self.output_layer:
                 j = 0
@@ -230,10 +225,9 @@ class AutoEncoder:
     def training(self, encoder, input):
         # TODO: not sure if needed for back prop... not mentioned in assignment
         # for inputs in batch:
-        inpt = input[1]
         j = 0
         for node in encoder.input_layer.nodes:
-            node.set_value(inpt[j])
+            node.set_value(input[j])
             j += 1
         #     temp = encoder.current_layer
         encoder.feed_forward_process()
